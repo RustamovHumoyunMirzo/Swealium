@@ -1,0 +1,31 @@
+name: Build and smoke test
+on: [push, pull_request]
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: dotnet build -c Release
+      - name: Check API reference and documentation
+        run: |
+          dotnet run --project tools/Swealium.Docs -c Release --no-build -- --check
+          python tools/generate_doc_diagrams.py --check
+          python tools/check_docs.py
+      - name: Run rendering and input integration tests
+        run: dotnet run --project tests/Swealium.Tests -c Release --no-build
+      - name: Render three frames (headless SDL software renderer)
+        run: dotnet run --project samples/Swealium.Sample -c Release --no-build -- --smoke-test
+        env:
+          SDL_VIDEO_DRIVER: dummy
+          SDL_RENDER_DRIVER: software
+      - run: dotnet pack src/Swealium -c Release --no-build -o artifacts

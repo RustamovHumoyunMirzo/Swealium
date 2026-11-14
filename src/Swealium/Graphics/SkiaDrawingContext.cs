@@ -1,0 +1,67 @@
+using SkiaSharp;
+namespace Swealium.Graphics;
+
+internal sealed class SkiaDrawingContext(SKCanvas canvas) : DrawingContext
+{
+    private bool active = true;
+    internal void End() => active = false;
+    private void Verify() => ObjectDisposedException.ThrowIf(!active, this);
+    private static SKRect ToRect(Rect r) => SKRect.Create(r.X, r.Y, r.Width, r.Height);
+    private static SKPaint Paint(Color c, float thickness = 0) => new()
+    {
+        Color = new SKColor(c.R, c.G, c.B, c.A), IsAntialias = true,
+        Style = thickness > 0 ? SKPaintStyle.Stroke : SKPaintStyle.Fill, StrokeWidth = thickness
+    };
+    internal static SKRoundRect RoundRect(Rect bounds, CornerRadii radii)
+    {
+        var r = radii.Normalize(new(bounds.Width, bounds.Height));
+        var rounded = new SKRoundRect();
+        rounded.SetRectRadii(ToRect(bounds), [
+            new SKPoint(r.TopLeft, r.TopLeft), new SKPoint(r.TopRight, r.TopRight),
+            new SKPoint(r.BottomRight, r.BottomRight), new SKPoint(r.BottomLeft, r.BottomLeft)]);
+        return rounded;
+    }
+    public override void FillRectangle(Rect bounds, Color color, CornerRadii radii)
+    {
+        Verify();
+        using var paint = Paint(color);
+        using var rounded = RoundRect(bounds, radii);
+        canvas.DrawRoundRect(rounded, paint);
+    }
+    public override void StrokeRectangle(Rect bounds, Color color, CornerRadii radii, float thickness = 1)
+    {
+        Verify();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(thickness);
+        using var paint = Paint(color, thickness);
+        using var rounded = RoundRect(bounds, radii);
+        canvas.DrawRoundRect(rounded, paint);
+    }
+    public override void FillEllipse(Rect bounds, Color color)
+    {
+        Verify();
+        using var paint = Paint(color);
+        canvas.DrawOval(ToRect(bounds), paint);
+    }
+    public override void DrawLine(Point start, Point end, Color color, float thickness = 1)
+    {
+        Verify();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(thickness);
+        using var paint = Paint(color, thickness);
+        canvas.DrawLine(start.X, start.Y, end.X, end.Y, paint);
+    }
+    public override void DrawText(string text, Point baseline, Color color, float fontSize = 16)
+    {
+        Verify();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(fontSize);
+        using var font = new SKFont(SKTypeface.Default, fontSize);
+        using var paint = Paint(color);
+        canvas.DrawText(text, baseline.X, baseline.Y, SKTextAlign.Left, font, paint);
+    }
+    public override Size MeasureText(string text, float fontSize = 16)
+    {
+        Verify();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(fontSize);
+        return TextMetrics.Measure(text, fontSize);
+    }
+}
+
