@@ -71,7 +71,9 @@ dotnet run --project tests/Swealium.Tests -c Release
 dotnet run --project samples/Swealium.Sample -- --smoke-test
 ```
 
-The test harness is an executable; dotnet test is not its entry point. Its normal run sets SDL's dummy/software drivers. The sample smoke test opens a main, owned child, and independent window, then closes them automatically. It does not open blocking native message boxes.
+The test harness is an executable; dotnet test is not its entry point. Its normal run uses SDL's dummy/software drivers. If they are not already configured, it restarts itself with those variables in the child process's native environment; this is necessary on Unix because changing .NET's managed environment does not update native SDL's environment. CI supplies the variables before process startup. A regression check verifies the drivers from native SDL across repeated application sessions.
+
+The sample smoke test opens a main, owned child, and independent window, then closes them automatically. It does not open blocking native message boxes. On a headless machine, supply SDL_VIDEO_DRIVER=dummy and SDL_RENDER_DRIVER=software before launching the sample; the test harness's automatic relaunch applies only to the tests.
 
 For an actual desktop window-control check:
 

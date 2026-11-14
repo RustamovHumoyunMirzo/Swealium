@@ -23,6 +23,9 @@ jobs:
           python tools/check_docs.py
       - name: Run rendering and input integration tests
         run: dotnet run --project tests/Swealium.Tests -c Release --no-build
+        env:
+          SDL_VIDEO_DRIVER: dummy
+          SDL_RENDER_DRIVER: software
       - name: Render three frames (headless SDL software renderer)
         run: dotnet run --project samples/Swealium.Sample -c Release --no-build -- --smoke-test
         env:

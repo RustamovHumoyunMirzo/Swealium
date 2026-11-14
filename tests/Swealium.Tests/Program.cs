@@ -14,9 +14,10 @@ if (args.Contains("--native-window-controls"))
     Console.WriteLine("Native window control checks passed.");
     return 0;
 }
-Environment.SetEnvironmentVariable("SDL_VIDEO_DRIVER", "dummy");
-Environment.SetEnvironmentVariable("SDL_RENDER_DRIVER", "software");
+if (HeadlessTestEnvironment.RelaunchIfNeeded(args) is { } childExitCode)
+    return childExitCode;
 (int Passed, int Failed) result = (0, 0);
+Run("headless drivers are visible to native SDL", HeadlessTestEnvironment.VerifyNativeDrivers);
 Run("tree ownership, cycles, and replacement", Tree);
 Run("hit testing, bubbling, capture, click, and cancellation", Pointer);
 Run("focus navigation, keyboard activation, and Unicode text", Keyboard);

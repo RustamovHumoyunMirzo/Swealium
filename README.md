@@ -1,5 +1,7 @@
 # Swealium
 
+[![Build and smoke test](https://github.com/RustamovHumoyunMirzo/Swealium/actions/workflows/build.yml/badge.svg)](https://github.com/RustamovHumoyunMirzo/Swealium/actions/workflows/build.yml)
+
 A .NET 10 retained-mode GUI framework using SDL3 windowing and SkiaSharp CPU rendering. Public drawing, layout, input, window, and native-interop types belong to Swealium.
 
 ```csharp

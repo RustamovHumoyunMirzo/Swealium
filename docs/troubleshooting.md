@@ -30,6 +30,12 @@ Restore dependencies and publish with an appropriate RID. Inspect the full loade
 
 Use a concrete runtime test on the deployment machine. Building an AnyCPU assembly is insufficient evidence for a new architecture.
 
+## CI reports "No available video device"
+
+A headless runner has no desktop video device. Set SDL_VIDEO_DRIVER=dummy and SDL_RENDER_DRIVER=software in the workflow step's env block before launching the test/sample process. On Unix, Environment.SetEnvironmentVariable inside .NET updates a managed cache and is insufficient for native SDL driver selection. The test harness automatically restarts with a native process environment when necessary, and verifies the selected drivers through SDL.
+
+This is different from a missing native-library error: SDL loaded successfully but could not initialize an available video backend. Installing unrelated graphics libraries or skipping the window tests does not address driver selection.
+
 ## Shapes render but text is blank
 
 The default system typeface may be unavailable. Install fonts and fontconfig on Linux. The package uses the fontconfig-enabled Skia native assets. Complex shaping and custom family/fallback selection are not provided by the public text API yet.
