@@ -45,6 +45,12 @@ Use meaningful finite extents with Normalize/Contains. The type does not act as 
 
 Widget.Radii uses this shape for hit testing and clipping. DrawingContext rounded primitives independently normalize to their own supplied rectangle.
 
+## Stroke and StrokeSide
+
+`StrokeSide(float width, Color color, StrokeStyle style = Solid)` is an immutable readonly record; Width must be finite/nonnegative and Style must be defined. Read-only Width/Color/Style properties default to zero/transparent/Solid. `Stroke` contains Left/Top/Right/Bottom StrokeSide properties. Constructors accept `(float width, Color color, StrokeStyle style = Solid)`, `(StrokeSide uniform)`, `(Thickness widths, Color color, StrokeStyle style = Solid)`, or `(StrokeSide left, StrokeSide top, StrokeSide right, StrokeSide bottom)`. Default Stroke is invisible. Generated record equality/formatting members are included in the signature reference.
+
+Widget.Stroke is rendered automatically inside rounded outer bounds, after overlays, with independent widths/colors/styles and smoothly blended curved corners. StrokeStyle supports Solid, Dashed, Dotted, Double, Hidden. Hidden has no paint/effective width; Double paints outer/inner thirds. Dash/dot sampling follows the perimeter and has bounded tessellation work. Opposing oversized widths scale to fit. It is decorative and consumes no layout space. Default/focus/local precedence is described in [Widget strokes](../widgets/widget.md#per-side-strokes).
+
 ## DrawingContext
 
 Abstract frame-scoped interface. Protected default constructor supports backend implementations, but callers normally receive it in Draw/Paint.

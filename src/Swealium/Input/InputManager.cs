@@ -10,6 +10,8 @@ public sealed class InputManager
     private readonly List<Widget> hovered = [];
     private Point lastPosition;
     private bool hasPointer;
+    private readonly HashSet<Key> heldModifiers=[];
+    public KeyModifiers Modifiers { get; private set; }
     public Widget? Root
     {
         get => root;
@@ -43,7 +45,7 @@ public sealed class InputManager
         Point local = new(parentPosition.X - widget.Bounds.X, parentPosition.Y - widget.Bounds.Y);
         bool inside = widget.ContainsPoint(local);
         if (widget.ClipToBounds && !inside) return null;
-        if (widget is Container container)
+        if (widget is Container container && container.CanHitChildren(local))
         {
             var children = container.PaintOrder;
             for (int i = children.Length - 1; i >= 0; i--)
@@ -67,6 +69,9 @@ public sealed class InputManager
         FocusedWidget = widget;
         if (previous is not null) { previous.IsFocused = false; previous.RaiseFocus(); }
         if (widget is not null) { widget.IsFocused = true; widget.RaiseFocus(); }
+        if (widget is not null)
+            for (Container? ancestor=widget.Parent;ancestor is not null;ancestor=ancestor.Parent)
+                if (ancestor is ScrollContainer scroll) scroll.BringIntoView(widget);
         FocusChanged?.Invoke();
         return true;
     }
@@ -89,6 +94,7 @@ public sealed class InputManager
         ArgumentNullException.ThrowIfNull(e);
         if (e.Kind == PointerEventKind.Cancel) { Cancel(); return; }
         if (CanProcessInput?.Invoke() == false) return;
+        if (!e.HasExplicitModifiers) e.Modifiers=Modifiers;
         if (e.Kind == PointerEventKind.Leave) { hasPointer = false; ClearHover(); return; }
         lastPosition = e.WindowPosition;
         hasPointer = true;
@@ -116,6 +122,12 @@ public sealed class InputManager
     {
         ArgumentNullException.ThrowIfNull(e);
         if (CanProcessInput?.Invoke() == false) return;
+        if (Modifier(e.Key)!=KeyModifiers.None)
+        {
+            if (e.IsDown) heldModifiers.Add(e.Key);else heldModifiers.Remove(e.Key);
+        }
+        e.Modifiers |= heldModifiers.Aggregate(KeyModifiers.None,(value,key)=>value|Modifier(key));
+        Modifiers=e.Modifiers;
         Validate();
         if (FocusedWidget is { } focused) Route(focused, e, widget => widget.RaiseKey(e));
         if (!e.Handled && e.IsDown && !e.IsRepeat && e.Key == Key.Tab)
@@ -219,6 +231,14 @@ public sealed class InputManager
         if (previous is not null) Deliver(previous, new PointerEvent(PointerEventKind.Cancel, lastPosition));
     }
     /// <summary>Release capture, hover, and keyboard focus after window deactivation or root replacement.</summary>
-    public void Cancel() { hasPointer = false; CancelCapture(); ClearHover(); Focus(null); }
+    public void Cancel() { hasPointer = false; heldModifiers.Clear(); Modifiers=KeyModifiers.None; CancelCapture(); ClearHover(); Focus(null); }
+    private static KeyModifiers Modifier(Key key)=>key switch
+    {
+        Key.LeftShift or Key.RightShift=>KeyModifiers.Shift,
+        Key.LeftControl or Key.RightControl=>KeyModifiers.Control,
+        Key.LeftAlt or Key.RightAlt=>KeyModifiers.Alt,
+        Key.LeftSuper or Key.RightSuper=>KeyModifiers.Super,
+        _=>KeyModifiers.None
+    };
 }
 

@@ -3,6 +3,33 @@ using Swealium.Graphics;
 using Swealium.UI;
 
 bool smokeTest = args.Contains("--smoke-test");
+if (args.Contains("--scroll-demo"))
+{
+    SwealiumApplication.Run(new(){Title="Swealium — scrolling and per-side strokes",Width=820,Height=620},window=>
+    {
+        var root=new Container{Padding=new(24),Gap=12,Background=new(240,243,249)};
+        root.Children.Add(new Text{Content="Scroll vertically · Shift+wheel horizontally · Drag a thumb",Style=new(){FontSize=24}});
+        var scroll=new ScrollContainer{Direction=ScrollDirection.Both,Weight=1,WeightBasis=WeightBasis.Zero,Gap=12,Padding=new(16),Background=Color.White,Radii=new(18),Stroke=new Stroke(2,new(160,175,200)),
+            VerticalScrollBarStyle=new(){Thickness=16,ThumbColor=new(70,110,170),ThumbRadii=new(8,2,8,2)}};
+        for(int i=0;i<20;i++) scroll.Children.Add(new Button{Text=$"Item {i+1} — a wide row with four independent border sides",Width=1050,Height=60,Radii=new(16,4,16,4),
+            Stroke=new(new StrokeSide(5,new(235,100,100)),new StrokeSide(2,new(100,150,240)),new StrokeSide(8,new(80,190,140),(StrokeStyle)(i%5)),new StrokeSide(6,new(235,195,90),StrokeStyle.Double))});
+        root.Children.Add(scroll);
+        var controls=new Container{Layout=LayoutMode.Horizontal,Gap=8};
+        var next=new Button{Text="Next page"};next.Click+=()=>scroll.ScrollBy(0,scroll.Viewport.Height);
+        var top=new Button{Text="Top"};top.Click+=()=>scroll.ScrollTo(0,0);
+        var hidden=new Button{Text="Toggle bars"};hidden.Click+=()=>
+        {
+            var visibility=scroll.VerticalScrollBarVisibility==ScrollBarVisibility.Hidden?ScrollBarVisibility.Auto:ScrollBarVisibility.Hidden;
+            scroll.HorizontalScrollBarVisibility=scroll.VerticalScrollBarVisibility=visibility;
+        };
+        controls.Children.Add(top);controls.Children.Add(next);controls.Children.Add(hidden);root.Children.Add(controls);
+        var status=new Text();root.Children.Add(status);
+        scroll.ScrollChanged+=e=>status.Content=$"Offset {e.Offset.X:0}, {e.Offset.Y:0} · Extent {e.Extent.Width:0} × {e.Extent.Height:0}";
+        window.Content=root;window.Input.Focus(scroll);
+        if(smokeTest){scroll.ScrollTo(60,120);int frames=0;window.Paint+=(_,_)=>{if(++frames==3)window.RequestClose();};}
+    });
+    return;
+}
 if (args.Contains("--text-demo"))
 {
     SwealiumApplication.Run(new(){Title="Swealium — shaped text and editing",Width=850,Height=650}, window=>
@@ -19,7 +46,7 @@ if (args.Contains("--text-demo"))
         content.Children.Add(weights);
         var editor = new TextBox{Multiline=true,Height=180,Style=new(){FontSize=22},Text="Edit text here. Try your platform IME.\nArabic: مرحبا بالعالم\nEmoji: 😀 — combining: é"};
         content.Children.Add(editor);
-        content.Children.Add(new Text{Content="Select and drag · Ctrl/Cmd+A/C/X/V/Z · Shift+arrows · IME conversion",Style=new(){Foreground=new(80,85,100)}});
+        content.Children.Add(new Text{Content="Select and drag · Ctrl/Cmd+A/C/X/V/Z · Shift+Home/End · IME conversion",Style=new(){Foreground=new(80,85,100)}});
         window.Content=content;window.Input.Focus(editor);
         if(smokeTest) { int frames=0;window.Paint+=(_,_)=>{if(++frames==3)window.RequestClose();}; }
     });

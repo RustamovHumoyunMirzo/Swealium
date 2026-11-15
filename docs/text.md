@@ -92,7 +92,7 @@ TextBox edits plain text; markup remains literal. It supports pointer drag selec
 
 All public positions/ranges use .NET UTF-16 indices. Selection endpoints snap to extended grapheme boundaries. Backspace/Delete remove a grapheme, preserving surrogate pairs, combining marks, and joined emoji. Newlines normalize to LF; single-line editors replace newlines with spaces. Enter inserts a newline in multiline mode and raises `Submitted` in single-line mode. Tab remains focus navigation.
 
-Undo retains up to 100 edit snapshots. Programmatic `Text` assignment clears history; `ReplaceSelection` creates an undoable edit. The control scrolls internally to reveal the caret, supports multiline wheel scrolling, and clips selection/text to its padded content area. It does not expose a standalone scrolling container, password masking, syntax highlighting, document virtualization, spellcheck, or accessibility integration.
+Undo retains up to 100 edit snapshots. Programmatic `Text` assignment clears history; `ReplaceSelection` creates an undoable edit. The control scrolls internally to reveal the caret, supports multiline wheel scrolling, and clips selection/text to its padded content area. Use [ScrollContainer](widgets/scroll-container.md) for a separately styled outer content viewport. TextBox does not expose password masking, syntax highlighting, document virtualization, spellcheck, or accessibility integration.
 
 ## IME preedit and candidates
 

@@ -19,6 +19,8 @@ public class Container : Widget
     /// <summary>Insertion order controls flow. ZIndex controls drawing and hit-testing order.</summary>
     public WidgetCollection Children { get; }
     internal Widget[] PaintOrder => Children.OrderBy(child => child.ZIndex).ToArray();
+    internal virtual Rect? ChildrenClip => null;
+    internal virtual bool CanHitChildren(Point local) => true;
     public Color Background { get; set; } = Color.Transparent;
     public override void Draw(DrawingContext context) =>
         context.FillRectangle(new(0, 0, ActualWidth, ActualHeight), Background, Radii);

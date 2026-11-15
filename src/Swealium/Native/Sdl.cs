@@ -94,6 +94,7 @@ internal static partial class Sdl
         [FieldOffset(36)] public float WheelMouseX;
         [FieldOffset(40)] public float WheelMouseY;
         [FieldOffset(24)] public int ScanCode;
+        [FieldOffset(28)] public uint KeyCode;
         [FieldOffset(32)] public ushort Modifiers;
         [FieldOffset(37)] public byte Repeat;
         // const char* follows windowID; pointer alignment varies by architecture.

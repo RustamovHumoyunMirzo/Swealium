@@ -8,6 +8,7 @@ public abstract class Widget
     private float x, y, width = float.NaN, height = float.NaN;
     private float minWidth, minHeight, maxWidth = float.PositiveInfinity, maxHeight = float.PositiveInfinity, grow;
     private Thickness margin, padding;
+    private Stroke? localStroke;
     private Alignment? horizontalAlignment, verticalAlignment;
     private bool isVisible = true, layoutDirty = true, arranged;
     private Rect layoutBounds;
@@ -58,6 +59,12 @@ public abstract class Widget
     }
     public int ZIndex { get; set; }
     public CornerRadii Radii { get; set; }
+    /// <summary>Effective stroke. Explicit assignment suppresses automatic default/focus styling until ResetStroke.</summary>
+    public Stroke Stroke { get=>localStroke??(IsFocused?FocusStroke:GetDefaultStroke());set=>localStroke=value; }
+    public Stroke FocusStroke { get; set; }
+    public bool IsStrokeSet => localStroke.HasValue;
+    public void ResetStroke() => localStroke=null;
+    protected virtual Stroke GetDefaultStroke() => default;
     public bool ClipToBounds { get; set; } = true;
     public bool IsEnabled { get; set; } = true;
     public bool IsVisible { get => isVisible; set { isVisible = value; InvalidateLayout(); } }
@@ -148,6 +155,8 @@ public abstract class Widget
     public event Action? FocusChanged;
 
     public abstract void Draw(DrawingContext context);
+    /// <summary>Draw after descendants and before the widget's decorative stroke.</summary>
+    public virtual void DrawOverlay(DrawingContext context) { }
     public void PerformClick()
     {
         if (!IsInteractable) return;

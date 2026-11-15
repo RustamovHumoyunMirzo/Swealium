@@ -4,6 +4,8 @@
 
 Namespace: Swealium.UI. All tree/property/input operations should occur on the UI thread. Most widget setters do not perform thread checks.
 
+The [widget reference hub](../widgets/README.md) provides a dedicated page for every public widget, including [ScrollContainer](../widgets/scroll-container.md).
+
 ## Widget
 
 Abstract retained visual. The protected default constructor creates no native resources. Derived types implement Draw(DrawingContext).
@@ -23,6 +25,8 @@ Abstract retained visual. The protected default constructor creates no native re
 | Grow | 0 | Finite nonnegative spare-space weight on stack main axis |
 | ZIndex | 0 | Signed sibling rendering/hit priority; does not change flow/traversal |
 | Radii | zero CornerRadii | Rounded drawing clip/default hit region |
+| Stroke | zero-width default Stroke | Independent left/top/right/bottom inside widths/colors; decorative, no layout inset |
+| FocusStroke | empty in Widget; initialized by Button/TextBox | Automatic focused Stroke, only when no explicit Stroke assignment exists |
 | ClipToBounds | true | Clip widget subtree drawing/input to its rounded boundary |
 | GridRow, GridColumn | 0 | Nonnegative zero-based cell in a parent Grid |
 | GridRowSpan, GridColumnSpan | 1 | Positive cell span in a parent Grid |
@@ -79,6 +83,10 @@ PerformClick checks effective visibility/enabled ancestry, calls OnClick, then r
 | FocusChanged | Action | protected virtual OnFocusChanged() |
 
 Public virtual OnMouseDown(float x, float y), OnMouseUp, and OnMouseMove are legacy local-coordinate hooks. Base OnPointerInput invokes them for Down/Up/Move; use typed pointer events when button/wheel identity matters. Other base hooks do nothing. Public input events still occur after the virtual hook; Handled controls subsequent bubbling.
+
+DrawOverlay(DrawingContext) is public virtual and initially empty. The renderer invokes it with a separate frame-scoped context after children. Widget.Stroke draws last automatically, following normalized Radii and inside the outer bounds. It changes neither layout nor hit geometry; add Padding for interior clearance. See [stroke construction and rendering](../widgets/widget.md#per-side-strokes).
+
+Stroke returns the effective border: explicit local value first, otherwise FocusStroke when focused, otherwise protected virtual GetDefaultStroke(). Any explicit assignment (including default/Hidden) sets IsStrokeSet=true and suppresses automatic state styling. ResetStroke() restores automatic behavior. Button/TextBox have no separate Draw-time focus border. StrokeSide includes StrokeStyle (Solid/Dashed/Dotted/Double/Hidden) and rounded corners blend adjacent colors.
 
 ## Container
 

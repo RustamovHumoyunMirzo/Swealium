@@ -4,6 +4,9 @@ namespace Swealium.Native;
 
 internal static partial class Sdl
 {
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    [LibraryImport("SDL3")]
+    internal static partial ushort SDL_GetModState();
     [StructLayout(LayoutKind.Sequential)]
     internal struct InputRect { public int X, Y, Width, Height; }
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]

@@ -8,7 +8,7 @@ public class Button : Widget
     private Key activationKey;
     private string text = "Button";
     private float fontSize = 16;
-    public Button() { IsFocusable = true; Padding = new Thickness(16, 12); Radii = new CornerRadii(6); }
+    public Button() { IsFocusable = true; Padding = new Thickness(16, 12); Radii = new CornerRadii(6); FocusStroke=new(2,Color.White); }
     public string Text { get => text; set { ArgumentNullException.ThrowIfNull(value); text = value; InvalidateLayout(); } }
     public Color Background { get; set; } = new(52, 89, 160);
     public Color HoverBackground { get; set; } = new(65, 111, 193);
@@ -25,9 +25,6 @@ public class Button : Widget
     {
         Color background = !IsInteractable ? new(65, 65, 70) : IsPressed ? PressedBackground : IsPointerOver ? HoverBackground : Background;
         context.FillRectangle(new(0, 0, ActualWidth, ActualHeight), background, Radii);
-        if (IsFocused && ActualWidth > 2 && ActualHeight > 2)
-            context.StrokeRectangle(new(1, 1, ActualWidth - 2, ActualHeight - 2), Color.White,
-                Radii.Normalize(new(ActualWidth, ActualHeight)).Inset(1), 2);
         context.DrawText(Text, ContentBounds, new TextStyle { Foreground = Foreground, FontSize = FontSize },
             new TextOptions { Wrapping = TextWrapping.None, Alignment = TextAlignment.Center, VerticalAlignment = TextVerticalAlignment.Center });
     }

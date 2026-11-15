@@ -9,6 +9,7 @@ Documentation for **0.1.0-alpha.1 / .NET 10**. This describes the implemented AP
 3. [Arrange a visual tree](layout.md).
 4. [Handle pointer, keyboard, and text input](input.md).
 5. [Draw and create custom widgets](custom-widgets.md).
+6. [Browse every widget](widgets/README.md), including base APIs and customization hooks.
 
 ## Task guides
 
@@ -21,6 +22,8 @@ Documentation for **0.1.0-alpha.1 / .NET 10**. This describes the implemented AP
 | [Input](input.md) | Hit regions, routing, capture, focus, keyboard activation, Unicode |
 | [Drawing](drawing.md) | Logical units, frame-scoped context, shapes, text, radii, DPI |
 | [Text and editing](text.md) | Shaping, bidi, HTML text markup, Text/TextBox, selection, clipboard, IME preedit/candidates |
+| [Widget hub](widgets/README.md) | Every public widget, inherited contracts, examples, strokes, and scrollbars |
+| [Scrolling](widgets/scroll-container.md) | Directions, viewport/extent, nested input, custom or hidden scrollbars |
 | [Custom widgets](custom-widgets.md) | Intrinsic measurement, drawing, event overrides, custom containers |
 | [Native interop](native-interop.md) | Portable routing IDs versus borrowed OS handles, window-system kinds, ownership |
 | [Platform and deployment](platforms.md) | Native dependencies, target coverage, workloads, packaging, reproducibility |
@@ -44,7 +47,4 @@ Inherited widget members are documented once on Widget. WidgetCollection also in
 
 ## Current boundaries
 
-Desktop windowing, stack/grid/wrap layout, weighted allocation, shaped text, formatted HTML text, plain-text editing, IME event/preedit/candidate rendering, multi-window ownership, and dialogs are implemented. Windows x64 has local native runtime verification; Linux/macOS CI is configured but requires target runtime verification for changes. Interactive IMEs require manual OS/provider testing. iOS/Android native lifecycle hosts are **not implemented**. There is no standalone scrolling container, multiple-pointer API, accessibility bridge, or GPU Skia backend.
-
-Examples in the guides use Swealium-owned public types. The backend's Skia and SDL classes remain internal. Native interop deliberately exposes only a borrowed OS handle descriptor, never an SDL_Window pointer.
-
+Desktop windowing, stack/grid/wrap layout, weighted allocation, shaped text, formatted HTML text, plain-text editing, IME event/preedit/candidate rendering, multi-window ownership, and dialogs are implemented. ScrollContainer adds retained scrolling with customizable bars. Windows x64 has local native runtime verification; Linux/macOS CI is configured but requires target runtime verification for changes. Interactive IMEs require manual OS/provider testing. iOS/Android native lifecycle hosts are **not implemented**. There is no multiple-pointer API, accessibility bridge, or GPU Skia backend.

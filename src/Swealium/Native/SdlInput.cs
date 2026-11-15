@@ -9,20 +9,20 @@ internal static class SdlInput
     {
         switch (e.Type)
         {
-            case 0x400: input.ProcessPointer(new(PointerEventKind.Move, new(e.MouseX, e.MouseY))); break;
+            case 0x400: input.ProcessPointer(new(PointerEventKind.Move, new(e.MouseX, e.MouseY), modifiers:PointerModifiers(input))); break;
             case 0x401:
             case 0x402:
                 input.ProcessPointer(new(e.Type == 0x401 ? PointerEventKind.Down : PointerEventKind.Up,
-                    new(e.MouseX, e.MouseY), Button(e.Button)));
+                    new(e.MouseX, e.MouseY), Button(e.Button), modifiers:PointerModifiers(input)));
                 break;
             case 0x403:
                 float direction = e.WheelDirection == 1 ? -1 : 1;
                 input.ProcessPointer(new(PointerEventKind.Wheel, new(e.WheelMouseX, e.WheelMouseY),
-                    wheelDelta: new Point(e.WheelX * direction, e.WheelY * direction)));
+                    wheelDelta: new Point(e.WheelX * direction, e.WheelY * direction),modifiers:PointerModifiers(input)));
                 break;
             case 0x300:
             case 0x301:
-                input.ProcessKey(new(MapKey(e.ScanCode), e.Type == 0x300, Modifiers(e.Modifiers), e.Repeat != 0));
+                input.ProcessKey(new(MapKey(e.ScanCode,e.KeyCode,e.Modifiers), e.Type == 0x300, Modifiers(e.Modifiers), e.Repeat != 0));
                 break;
             case 0x302:
                 string composition = Marshal.PtrToStringUTF8(e.Text) ?? "";
@@ -64,7 +64,23 @@ internal static class SdlInput
         ((value & 0x2000) != 0 ? KeyModifiers.CapsLock : 0) |
         ((value & 0x1000) != 0 ? KeyModifiers.NumLock : 0);
 
-    private static Key MapKey(int scan) => scan switch
+    private static KeyModifiers PointerModifiers(InputManager input)=>input.Modifiers|Modifiers(Sdl.SDL_GetModState());
+    private static Key MapKey(int scan,uint keyCode,ushort modifiers)
+    {
+        // Navigation may be supplied by a keypad or a platform-remapped key.
+        Key logical=keyCode switch
+        {
+            0x4000004a=>Key.Home,0x4000004d=>Key.End,0x4000004b=>Key.PageUp,0x4000004e=>Key.PageDown,
+            0x40000050=>Key.Left,0x4000004f=>Key.Right,0x40000052=>Key.Up,0x40000051=>Key.Down,
+            _=>Key.Unknown
+        };
+        if (logical!=Key.Unknown) return logical;
+        if ((modifiers&0x1000)==0)
+        {
+            Key keypad=scan switch {89=>Key.End,95=>Key.Home,91=>Key.PageDown,97=>Key.PageUp,92=>Key.Left,94=>Key.Right,90=>Key.Down,96=>Key.Up,99=>Key.Delete,98=>Key.Insert,_=>Key.Unknown};
+            if (keypad!=Key.Unknown) return keypad;
+        }
+        return scan switch
     {
         >= 4 and <= 29 => Key.A + (scan - 4),
         >= 30 and <= 39 => Key.D1 + (scan - 30),
@@ -75,6 +91,7 @@ internal static class SdlInput
         224 => Key.LeftControl, 225 => Key.LeftShift, 226 => Key.LeftAlt, 227 => Key.LeftSuper,
         228 => Key.RightControl, 229 => Key.RightShift, 230 => Key.RightAlt, 231 => Key.RightSuper,
         _ => Key.Unknown
-    };
+        };
+    }
 }
 

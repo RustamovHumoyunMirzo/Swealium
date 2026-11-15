@@ -50,7 +50,7 @@ Button activates on release of Space or Enter after a matching non-repeat press.
 
 ## Characters are not keys
 
-Key identifies a limited set of physical keys independently of keyboard layout. KeyModifiers describes modifiers. Use TextInput for actual Unicode characters:
+Key identifies a limited set of physical character keys and semantic navigation keys, including NumLock-off keypad/remapped Home/End. KeyModifiers describes modifiers; InputManager tracks held modifier transitions and PointerEvent also carries modifiers for Shift+wheel. Use TextInput for actual Unicode characters:
 
 ```csharp
 widget.IsFocusable = true;
@@ -60,6 +60,8 @@ window.Input.Focus(widget);
 ```
 
 Native text input starts when a focused widget opts in and stops when that focus is removed. Committed UTF-8, IME preedit, and candidate snapshots are copied before the next native poll. TextCompositionEvent uses UTF-16 offsets, converted from native character positions. TextCandidatesEvent carries a read-only list, selected index, and orientation. InputManager routes these through focused text clients. Widget.TextInputArea anchors native UI; TextBox supplies its scrolled caret geometry. See [text editing and IME](text.md).
+
+ScrollContainer offsets are included in arranged child bounds, so local input and IME placement follow scrolling. Focus reveals descendants through ancestor scroll containers. Nested wheel events bubble when the inner control cannot move; see [scroll input contracts](widgets/scroll-container.md#input-and-limitations).
 
 ## Synthetic input and hosts
 

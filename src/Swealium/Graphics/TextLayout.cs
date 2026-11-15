@@ -92,6 +92,17 @@ public sealed class TextLayout : IDisposable
         return found >= 0 ? found : Math.Max(0, ~found - 1);
     }
     internal int FromCodePoint(int index) => codePointOffsets[Math.Clamp(index, 0, codePointOffsets.Length - 1)];
+    internal TextPosition LineEdge(TextPosition position, bool end)
+    {
+        Verify(); ValidateIndex(position.Index);
+        var caret = block.GetCaretInfo(new Kit.CaretPosition(ToCodePoint(position.Index), position.Alternate));
+        int lineIndex = Math.Clamp(caret.LineIndex, 0, block.Lines.Count - 1);
+        var line = block.Lines[lineIndex];
+        int start=FromCodePoint(line.Start),limit=FromCodePoint(line.End);
+        int edge=end?limit:start;
+        if (end && edge>start && PlainText[edge-1] is '\n' or '\r' or '\u2028' or '\u2029') edge--;
+        return new(edge,end&&edge==limit&&lineIndex<block.Lines.Count-1);
+    }
     internal void Paint(SKCanvas canvas, Point origin, TextSelection? selection, Color? selectionColor)
     {
         Verify();

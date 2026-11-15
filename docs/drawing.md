@@ -37,6 +37,8 @@ The uniform-radius FillRectangle/StrokeRectangle overloads remain available. For
 
 Widget.Radii clips the entire widget subtree by default. A custom widget should also pass Radii when drawing its own rounded fill, particularly if ClipToBounds=false. A custom nonrectangular hit shape can override ContainsPoint; that alone does not change drawing or clipping.
 
+For independent border widths/colors on any widget, set Widget.Stroke using [Stroke/StrokeSide](widgets/widget.md#per-side-strokes). The renderer paints it after descendants and DrawOverlay, inside the rounded outer boundary. It does not consume padding or measurement space.
+
 ## Text
 
 The Point overload of DrawText uses a baseline origin and unwrapped shaped text. The Rect overload uses top-left paragraph bounds, wrapping, clipping, alignment, TextStyle, and optional HTML markup. MeasureText returns unwrapped shaped dimensions. TextLayout supplies context-independent measurement, hit testing, and caret geometry; dispose it after use. See [text and editing](text.md) for shaping, bidi, fallback, styles, HTML support, and editable widgets.

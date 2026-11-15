@@ -168,6 +168,39 @@ body += text(40,508,"Preedit stays separate. A commit replaces the captured sele
 body += text(40,546,"The operating-system IME controls candidate navigation and conversion.",18)
 figures["text-pipeline.svg"] = frame("Shared text layout and IME editing", "Plain text or HTML spans share shaping, bidi, fallback, wrapping, drawing, and caret geometry. TextBox keeps IME preedit separate until a committed event replaces the selection.", body)
 
+body = box(40,105,570,320,"","#eaf2ff","#6286ba")
+body += text(64,142,"Padded viewport: visible content",22,weight="600")
+body += '<rect x="70" y="172" width="490" height="215" fill="#e6f5ef" stroke="#4a9784" stroke-width="2"/>'
+body += '<path d="M70 172 H560 V490 H70 Z" fill="none" stroke="#4a9784" stroke-dasharray="8 6" stroke-width="2"/>'
+body += box(82,186,460,52,"Row 4: translated by -Offset") + box(82,250,460,52,"Row 5")
+body += text(92,350,"Rows outside viewport are clipped.",19)
+body += '<rect x="576" y="172" width="14" height="215" rx="7" fill="#d8dfe9"/><rect x="576" y="228" width="14" height="65" rx="7" fill="#6286ba"/>'
+body += text(650,130,"Independent stroke sides",22,weight="600")
+body += '<rect x="685" y="170" width="250" height="200" rx="24" fill="#ffffff"/>'
+body += '<path d="M709 170 H911 Q935 170 935 194" fill="none" stroke="#587fd5" stroke-width="6"/>'
+body += '<path d="M935 194 V346 Q935 370 911 370" fill="none" stroke="#4a9784" stroke-width="12"/>'
+body += '<path d="M911 370 H709 Q685 370 685 346" fill="none" stroke="#c39a3a" stroke-width="16"/>'
+body += '<path d="M685 346 V194 Q685 170 709 170" fill="none" stroke="#c66363" stroke-width="9"/>'
+body += text(810,258,"Inside the rounded",18,anchor="middle")+text(810,287,"outer boundary",18,anchor="middle")
+body += text(650,420,"Stroke is decorative; padding is explicit.",17)
+body += text(40,532,"Bars can reserve gutters, overlay content, or be hidden for external custom controls.",19)
+figures["scroll-stroke.svg"] = frame("Scrolling viewport and per-side strokes", "A larger content extent is shifted behind a padded clipped viewport, with a vertical thumb. A second panel shows independently colored and sized border sides around rounded corners.",body)
+
+body = ""
+for x, y, label, extra in [(40,110,"Solid",""),(370,110,"Dashed",'stroke-dasharray="20 12"'),(700,110,"Dotted",'stroke-dasharray="0 16" stroke-linecap="round"'),(40,290,"Double","")]:
+    body += text(x,y-22,label,22,weight="600")
+    body += f'<rect x="{x}" y="{y}" width="260" height="95" rx="22" fill="white" stroke="#466fb3" stroke-width="6" {extra}/>'
+    if label=="Double":
+        body += f'<rect x="{x+3}" y="{y+3}" width="254" height="89" rx="19" fill="none" stroke="white" stroke-width="2"/>'
+body += text(370,268,"Hidden",22,weight="600") + text(370,342,"No border paint",19)
+body += text(700,268,"Blended corners",22,weight="600")
+body += '<defs><linearGradient id="corner-tl"><stop stop-color="#c66363"/><stop offset="1" stop-color="#466fb3"/></linearGradient><linearGradient id="corner-tr"><stop stop-color="#466fb3"/><stop offset="1" stop-color="#4a9784"/></linearGradient><linearGradient id="corner-br"><stop stop-color="#c39a3a"/><stop offset="1" stop-color="#4a9784"/></linearGradient><linearGradient id="corner-bl"><stop stop-color="#c66363"/><stop offset="1" stop-color="#c39a3a"/></linearGradient></defs>'
+body += '<g fill="none" stroke-width="10"><path d="M722 290 H938" stroke="#466fb3"/><path d="M960 312 V363" stroke="#4a9784"/><path d="M938 385 H722" stroke="#c39a3a"/><path d="M700 363 V312" stroke="#c66363"/><path d="M700 312 Q700 290 722 290" stroke="url(#corner-tl)"/><path d="M938 290 Q960 290 960 312" stroke="url(#corner-tr)"/><path d="M960 363 Q960 385 938 385" stroke="url(#corner-br)"/><path d="M722 385 Q700 385 700 363" stroke="url(#corner-bl)"/></g>'
+body += box(40,455,440,70,"Untouched: default / FocusStroke") + box(550,455,440,70,"Stroke assigned: only that Stroke","#e6f5ef","#4a9784")
+body += text(40,570,"An empty or Hidden explicit stroke also disables automatic focus borders.",20)
+body += text(40,610,"ResetStroke() restores state-based defaults. Every border uses the same renderer.",18)
+figures["stroke-styles.svg"] = frame("Stroke styles and focus precedence", "Solid, dashed, dotted, double, and hidden borders follow rounded geometry. Neighboring colors blend through corners. An explicitly assigned stroke replaces automatic default and focus appearance until ResetStroke.",body,height=650)
+
 OUT.mkdir(parents=True, exist_ok=True)
 for name, value in figures.items():
     target = OUT / name

@@ -13,6 +13,7 @@ Sealed, public parameterless constructor. Each window exposes its own instance.
 | Root | Widget? get/set | Unparented unique input-tree root; replacement cancels existing interaction and releases previous root ownership |
 | FocusedWidget | Widget? get | Current eligible widget focus |
 | CapturedWidget | Widget? get | Automatically captured primary-press target |
+| Modifiers | KeyModifiers get | Current routed keyboard modifier state, cleared by Cancel |
 | HitTest(Point point) | Widget? | Topmost eligible hit in logical window coordinates; ensures known-root invalidated layout first |
 | Focus(Widget? widget) | bool | true when focus request succeeds/no change; false for ineligible/detached/blocked targets; null clears |
 | ProcessPointer(PointerEvent e) | void | Validates interaction, hover/capture, routes pointer event, and optionally synthesizes primary-release click |
@@ -52,7 +53,7 @@ Source/CurrentTarget setters are internal. Fresh events begin untargeted. Reusin
 
 ## PointerEvent
 
-Constructor: PointerEvent(PointerEventKind kind, Point position, PointerButton button = None, Point wheelDelta = default).
+Constructor: PointerEvent(PointerEventKind kind, Point position, PointerButton button = None, Point wheelDelta = default, KeyModifiers? modifiers = null). Null uses InputManager's current modifier state when routed; explicit None overrides it for that event.
 
 | Property | Meaning |
 | --- | --- |
@@ -61,6 +62,7 @@ Constructor: PointerEvent(PointerEventKind kind, Point position, PointerButton b
 | Position | CurrentTarget-local position during routing; initially the supplied position |
 | Button | Changed pointer button, or None |
 | WheelDelta | Scroll amounts; SDL's flipped direction is normalized by native decoding |
+| Modifiers | Event modifier state; native pointer decoding combines tracked key transitions with native modifier state |
 
 Properties are read-only to callers. This is currently a single-pointer/mouse-style API; it has no pointer ID, pressure, multiple-touch routing, or public manual capture API. Touch synthesized as mouse by a native backend may still generate mouse-style input.
 
@@ -70,9 +72,11 @@ PointerButton values: None, Primary, Middle, Secondary, Back, Forward. Native un
 
 Constructor: KeyEvent(Key key, bool isDown, KeyModifiers modifiers = None, bool isRepeat = false). Read-only Key/IsDown/Modifiers/IsRepeat describe one physical keyboard transition/repeat.
 
-Key is physical identity, not a character or an OS keycode. Supported named groups are A–Z, D1–D9/D0, Enter/Escape/Backspace/Tab/Space, arrows, Home/End/PageUp/PageDown/Insert/Delete, F1–F12, and left/right Shift/Control/Alt/Super. Other native scancodes map to Unknown. See the generated [Key enum](reference.md#swealium-input-key) for every name/value.
+Character keys use physical identity; navigation also recognizes logical Home/End/arrows/Page keys from remapping and NumLock-off keypad navigation. NumLock-on keypad digits remain text input instead of navigation. Supported named groups are A–Z, D1–D9/D0, Enter/Escape/Backspace/Tab/Space, arrows, Home/End/PageUp/PageDown/Insert/Delete, F1–F12, and left/right Shift/Control/Alt/Super. Other native scancodes map to Unknown. See the generated [Key enum](reference.md#swealium-input-key) for every name/value.
 
 KeyModifiers is a flags enum: None=0, Shift=1, Control=2, Alt=4, Super=8, CapsLock=16, NumLock=32. Left/right native modifiers collapse to their corresponding combined Swealium flag.
+
+InputManager.Modifiers exposes current routed keyboard modifiers. ProcessKey merges event snapshots with held left/right modifier transitions, so custom hosts can send Shift down, a navigation key, then Shift up without repeating flags on each key. Cancel clears held state. InputManager may enrich a KeyEvent's Modifiers during routing; properties remain read-only to public callers.
 
 ## TextInputEvent
 

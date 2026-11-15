@@ -50,6 +50,14 @@ Run("shaping, bidi, wrapping, fallback, HTML, and UTF-16 indices", TextTests.Sha
 Run("grapheme editing, selection, undo, read-only, and IME commit", TextTests.Editing);
 Run("native IME decoding, candidate ownership, clipboard, and rendering", TextTests.NativeIme);
 Run("shaped text, preedit, and candidate raster rendering", TextTests.Rendering);
+Run("Shift Home/End selection across lines and wrapped caret affinity", Swealium.Tests.ScrollStrokeTests.SelectionEdges);
+Run("scroll extent, viewport, directions, gutters, clamping, and focus reveal", Swealium.Tests.ScrollStrokeTests.ScrollLayout);
+Run("scroll wheel, nested bubbling, thumb capture, track paging, and keyboard", Swealium.Tests.ScrollStrokeTests.ScrollInput);
+Run("scroll clipping, custom bars, and per-side rounded stroke pixels", Swealium.Tests.ScrollStrokeTests.Pixels);
+Run("native held Shift, keypad Home/End, logical line edges, and selection pixels",Swealium.Tests.EditingStrokeRegressionTests.NativeSelection);
+Run("native and nested Shift-wheel horizontal routing",Swealium.Tests.EditingStrokeRegressionTests.ShiftWheel);
+Run("public focus strokes and explicit local stroke precedence",Swealium.Tests.EditingStrokeRegressionTests.FocusStrokes);
+Run("solid/dashed/dotted/double/hidden stroke styles and blended corners",Swealium.Tests.EditingStrokeRegressionTests.StrokeStyles);
 Console.WriteLine($"{result.Passed} passed; {result.Failed} failed.");
 return result.Failed == 0 ? 0 : 1;
 

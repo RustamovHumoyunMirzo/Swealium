@@ -6,7 +6,7 @@ public enum PointerButton { None, Primary, Middle, Secondary, Back, Forward }
 public enum PointerEventKind { Move, Down, Up, Wheel, Enter, Leave, Cancel }
 [Flags]
 public enum KeyModifiers { None = 0, Shift = 1, Control = 2, Alt = 4, Super = 8, CapsLock = 16, NumLock = 32 }
-/// <summary>Physical keys, independent of the keyboard layout. Use TextInput for typed characters.</summary>
+/// <summary>Physical character keys and semantic navigation keys (including keypad/remapped navigation). Use TextInput for typed characters.</summary>
 public enum Key
 {
     Unknown, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
@@ -21,19 +21,21 @@ public abstract class InputEvent
     public Widget? CurrentTarget { get; internal set; }
     public bool Handled { get; set; }
 }
-public sealed class PointerEvent(PointerEventKind kind, Point position, PointerButton button = PointerButton.None, Point wheelDelta = default) : InputEvent
+public sealed class PointerEvent(PointerEventKind kind, Point position, PointerButton button = PointerButton.None, Point wheelDelta = default, KeyModifiers? modifiers = null) : InputEvent
 {
     public PointerEventKind Kind { get; } = kind;
     public Point WindowPosition { get; } = position;
     public Point Position { get; internal set; } = position;
     public PointerButton Button { get; } = button;
     public Point WheelDelta { get; } = wheelDelta;
+    public KeyModifiers Modifiers { get; internal set; } = modifiers ?? KeyModifiers.None;
+    internal bool HasExplicitModifiers { get; } = modifiers.HasValue;
 }
 public sealed class KeyEvent(Key key, bool isDown, KeyModifiers modifiers = KeyModifiers.None, bool isRepeat = false) : InputEvent
 {
     public Key Key { get; } = key;
     public bool IsDown { get; } = isDown;
-    public KeyModifiers Modifiers { get; } = modifiers;
+    public KeyModifiers Modifiers { get; internal set; } = modifiers;
     public bool IsRepeat { get; } = isRepeat;
 }
 public sealed class TextInputEvent(string text) : InputEvent

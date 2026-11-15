@@ -20,7 +20,19 @@ internal static class WidgetRenderer
             try { root.Draw(context); }
             finally { context.End(); }
             if (root is Container container)
-                foreach (var child in container.PaintOrder) Render(canvas, child);
+            {
+                int childrenSave = canvas.Save();
+                try
+                {
+                    if (container.ChildrenClip is { } area) canvas.ClipRect(SKRect.Create(area.X,area.Y,area.Width,area.Height));
+                    foreach (var child in container.PaintOrder) Render(canvas, child);
+                }
+                finally { canvas.RestoreToCount(childrenSave); }
+            }
+            var overlay = new SkiaDrawingContext(canvas);
+            try { root.DrawOverlay(overlay); }
+            finally { overlay.End(); }
+            WidgetStrokeRenderer.Draw(canvas, root);
         }
         finally { canvas.RestoreToCount(saved); }
     }

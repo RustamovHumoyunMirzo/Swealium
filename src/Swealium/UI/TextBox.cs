@@ -20,7 +20,8 @@ public class TextBox : Widget
     private readonly List<State> undo = [], redo = [];
     private IReadOnlyList<string> candidates = Array.Empty<string>();
     private sealed record State(string Text, int Anchor, int Caret);
-    public TextBox() { IsFocusable = true; AcceptsTextInput = true; Padding = new(8); Radii = new(4); MinWidth = 80; }
+    public TextBox() { IsFocusable = true; AcceptsTextInput = true; Padding = new(8); Radii = new(4); MinWidth = 80; FocusStroke=new(1,new(60,110,220)); }
+    protected override Stroke GetDefaultStroke()=>new(1,BorderColor);
     public string Text
     {
         get => text;
@@ -153,7 +154,6 @@ public class TextBox : Widget
     public override void Draw(DrawingContext context)
     {
         context.FillRectangle(new(0,0,ActualWidth,ActualHeight), Background, Radii);
-        context.StrokeRectangle(new(.5f,.5f,Math.Max(0,ActualWidth-1),Math.Max(0,ActualHeight-1)), IsFocused ? new(60,110,220) : BorderColor, Radii, 1);
         using var layout = Layout(ContentBounds.Width); Rect caretRect = Caret(layout); Rect area = ContentBounds;
         if (text.Length == 0 && composition.Length == 0 && Placeholder.Length > 0)
             context.DrawText(Placeholder, area, Style with { Foreground = new(140,140,145) }, new() { Wrapping = TextWrapping.None });
@@ -172,7 +172,15 @@ public class TextBox : Widget
         { CancelComposition(); dragging = true; Place(e.Position, false); e.Handled = true; }
         else if (e.Kind == PointerEventKind.Move && dragging) { Place(e.Position, true); e.Handled = true; }
         else if (e.Kind is PointerEventKind.Up or PointerEventKind.Cancel) dragging = false;
-        else if (e.Kind == PointerEventKind.Wheel && Multiline) { scrollY = Math.Max(0, scrollY - e.WheelDelta.Y * Style.FontSize * 3); e.Handled = true; }
+        else if (e.Kind == PointerEventKind.Wheel)
+        {
+            using var layout=Layout(ContentBounds.Width);
+            float x=e.WheelDelta.X,y=e.WheelDelta.Y;
+            if (e.Modifiers.HasFlag(KeyModifiers.Shift)||!Multiline) {if (x==0) x=y;y=0;}
+            float nextX=Math.Clamp(scrollX-x*Style.FontSize*3,0,Math.Max(0,layout.Size.Width+1-ContentBounds.Width));
+            float nextY=Math.Clamp(scrollY-y*Style.FontSize*3,0,Math.Max(0,layout.Size.Height-ContentBounds.Height));
+            if (nextX!=scrollX||nextY!=scrollY) {scrollX=nextX;scrollY=nextY;e.Handled=true;}
+        }
     }
     private void Place(Point point, bool extend)
     {
@@ -253,6 +261,14 @@ public class TextBox : Widget
                 Move(target, shift); break;
             case Key.Home:
             case Key.End:
+                if (command) { target = e.Key == Key.Home ? 0 : text.Length; alternate = false; }
+                else
+                {
+                    using var layout = Layout(ContentBounds.Width);
+                    var edge = layout.LineEdge(new(caret, alternate), e.Key == Key.End);
+                    target = edge.Index; alternate = edge.Alternate;
+                }
+                Move(target, shift); break;
             case Key.Up:
             case Key.Down:
             case Key.PageUp:
@@ -260,17 +276,13 @@ public class TextBox : Widget
                 using (var layout = Layout(ContentBounds.Width))
                 {
                     Rect rectangle = layout.GetCaretRectangle(new(caret, alternate));
-                    if (command && e.Key is Key.Home or Key.End) target = e.Key == Key.Home ? 0 : text.Length;
-                    else
-                    {
-                        float x = e.Key == Key.Home ? -float.MaxValue : e.Key == Key.End ? float.MaxValue : rectangle.X;
-                        float y = rectangle.Y + rectangle.Height / 2;
-                        if (e.Key == Key.Up) y -= rectangle.Height;
-                        if (e.Key == Key.Down) y += rectangle.Height;
-                        if (e.Key == Key.PageUp) y -= ContentBounds.Height;
-                        if (e.Key == Key.PageDown) y += ContentBounds.Height;
-                        var hit = layout.HitTest(new(x,y)); target = hit.Index; alternate = hit.Alternate;
-                    }
+                    float x = rectangle.X;
+                    float y = rectangle.Y + rectangle.Height / 2;
+                    if (e.Key == Key.Up) y -= rectangle.Height;
+                    if (e.Key == Key.Down) y += rectangle.Height;
+                    if (e.Key == Key.PageUp) y -= ContentBounds.Height;
+                    if (e.Key == Key.PageDown) y += ContentBounds.Height;
+                    var hit = layout.HitTest(new(x,y)); target = hit.Index; alternate = hit.Alternate;
                 }
                 Move(target, shift); break;
             default: return;
