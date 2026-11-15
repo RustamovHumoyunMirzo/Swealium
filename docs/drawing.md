@@ -49,5 +49,5 @@ Linux needs the fontconfig-enabled native package and installed fonts for the de
 
 ## Performance model
 
-Each visible frame is rasterized on the CPU, then its full pixel buffer is uploaded to a streaming texture. This is not Skia GPU rendering. Resizing reallocates the bitmap/surface/texture. Keep drawing and input callbacks short; cache application data rather than frame-scoped contexts. Layout is cached, but rendering is not yet invalidation-driven.
+GPU-backed Skia is preferred by default, with CPU rasterization and software SDL presentation as fallback. Resizing recreates the appropriate surface/framebuffer wrapper. See [rendering settings](rendering.md) for application HardwareAcceleration, context AntiAliasing, diagnostics, and platform boundaries. Keep drawing and input callbacks short; cache application data rather than frame-scoped contexts. Layout is cached, but rendering is not yet invalidation-driven.
 

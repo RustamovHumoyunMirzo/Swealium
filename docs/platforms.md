@@ -6,7 +6,7 @@
 
 | Target | Implementation/dependencies | Runtime evidence in this workspace |
 | --- | --- | --- |
-| Windows x64 | Desktop loop, windows, input, CPU renderer, ownership/dialogs | Local headless suite, visible multi-window smoke, native window-control and handle checks |
+| Windows x64 | Desktop loop, windows, input, GPU/raster renderer, ownership/dialogs | Local headless suite, visible multi-window smoke, native window-control and handle checks |
 | Windows x86/ARM64 | Managed AnyCPU plus dependency-provided native assets | Not executed locally |
 | Linux x64/ARM/ARM64 | Desktop code and native assets, SDL backend dependent | CI configured; not observed executing here |
 | macOS x64/ARM64 | Desktop code and native assets | CI configured; not observed executing here |
@@ -20,7 +20,7 @@ The library targets net10.0 and pins:
 
 | Package | Version | Purpose |
 | --- | --- | --- |
-| SkiaSharp | 4.153.1 | Managed raster drawing and platform native references |
+| SkiaSharp | 4.153.1 | Managed GPU/raster drawing and platform native references |
 | SkiaSharp.NativeAssets.Linux | 4.153.1 | Fontconfig-enabled Linux renderer |
 | Topten.RichTextKit | 0.6.173 | Paragraph shaping, bidi, wrapping, fallback, and caret geometry (Apache-2.0) |
 | AngleSharp | 1.10.3 | HTML text parsing without resource loaders/scripts (MIT) |
@@ -60,3 +60,5 @@ CI builds the solution, runs the executable integration harness and a headless m
 
 Read [maintenance](maintenance.md) for regeneration commands and [troubleshooting](troubleshooting.md) for deployment failures.
 
+
+GPU rendering uses SDL OpenGL/OpenGL ES and automatic raster fallback. Windows native GPU checks passed locally; other platform GPU paths remain unverified. See [rendering support boundaries](rendering.md).

@@ -7,6 +7,13 @@ using Swealium.Input;
 using Swealium.Native;
 using Swealium.UI;
 
+if (args.Contains("--gpu-rendering"))
+{
+    Swealium.Tests.RenderingOptionsTests.NativeGpu();
+    Console.WriteLine("Native GPU rendering checks passed.");
+    return 0;
+}
+
 if (args.Contains("--native-window-controls"))
 {
     WindowControlTests.RequireNativeHandle = true;
@@ -64,6 +71,8 @@ Run("SVG/SVGZ, recorded vectors, paths, resource policy, and rasterization",Swea
 Run("image/vector widget layout, aspect ratio, clipping, and input",Swealium.Tests.MediaTests.DisplayWidgets);
 Run("system/custom cursors, inheritance, capture, snapshots, and disposal",Swealium.Tests.MediaTests.CursorRouting);
 Run("native cursor caches, windows, headless fallback, and repeated session cleanup",Swealium.Tests.MediaTests.NativeCursors);
+Run("anti-aliasing defaults, context overrides, text, and lifetime",Swealium.Tests.RenderingOptionsTests.AntiAliasing);
+Run("software selection, GPU fallback, resize, and settings lifecycle",Swealium.Tests.RenderingOptionsTests.SoftwareAndFallback);
 Run("subtree opacity, overlapping children, strokes, and image compatibility",Swealium.Tests.InteractionBoundaryTests.Opacity);
 Run("base64/data URIs and bitmap resize/crop/rotate/flip/clear operations",Swealium.Tests.InteractionBoundaryTests.BitmapOperations);
 Run("independent pointer capture, primary focus, aggregate hover, and cancellation",Swealium.Tests.InteractionBoundaryTests.MultiplePointers);

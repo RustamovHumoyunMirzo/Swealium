@@ -1,6 +1,6 @@
 # Swealium documentation
 
-Documentation for **0.1.0-alpha.1 / .NET 10**. This describes the implemented API in this repository, including its current limitations. Swealium is a retained-mode GUI foundation with CPU raster drawing, SDL3 platform integration, explicit UI-thread ownership, and a small widget set.
+Documentation for **0.1.0-alpha.1 / .NET 10**. This describes the implemented API in this repository, including its current limitations. Swealium is a retained-mode GUI foundation with GPU drawing and CPU raster fallback, SDL3 platform integration, explicit UI-thread ownership, and a small widget set.
 
 ## Start here
 
@@ -22,6 +22,7 @@ Documentation for **0.1.0-alpha.1 / .NET 10**. This describes the implemented AP
 | [Input](input.md) | Hit regions, routing, capture, focus, keyboard activation, Unicode |
 | [Multiple pointers](multiple-pointers.md) | Mouse/touch/pen identity, per-contact capture/hover, pressure/tilt, native routing |
 | [Accessibility boundary](accessibility.md) | Semantic snapshots, actions, notifications, owned adapter lifecycle; native providers remain separate |
+| [Rendering settings](rendering.md) | Application/context anti-aliasing, GPU selection, diagnostics, software fallback |
 | [Drawing](drawing.md) | Logical units, frame-scoped context, shapes, text, radii, DPI |
 | [Images and vectors](images-and-vectors.md) | Raster formats, Bitmap, offscreen drawing, SVG/SVGZ, paths, scaling, ownership |
 | [Cursors](cursors.md) | System types, inheritance/capture, window defaults, hidden and custom bitmap cursors |
@@ -53,4 +54,4 @@ Inherited widget members are documented once on Widget. WidgetCollection also in
 
 ## Current boundaries
 
-Desktop windowing, stack/grid/wrap/scroll layout, shaped text/editing, media/cursors, multi-window dialogs, and independent mouse/touch/pen routing are implemented. Widget opacity applies to complete subtrees. Accessibility provides semantic trees/actions and a bridge boundary; native UIA/AX/AT-SPI/mobile providers are **not implemented**. Windows x64 has local runtime verification; Linux/macOS CI requires target runtime verification for changes. Physical touch/pen and interactive IMEs need device/provider testing. iOS/Android native lifecycle hosts and a GPU Skia backend are **not implemented**.
+Desktop windowing, stack/grid/wrap/scroll layout, shaped text/editing, media/cursors, multi-window dialogs, and independent mouse/touch/pen routing are implemented. Widget opacity applies to complete subtrees. Accessibility provides semantic trees/actions and a bridge boundary; native UIA/AX/AT-SPI/mobile providers are **not implemented**. Windows x64 has local runtime verification; Linux/macOS CI requires target runtime verification for changes. Physical touch/pen and interactive IMEs need device/provider testing. GPU-backed Skia uses SDL OpenGL/OpenGL ES, with raster fallback. iOS/Android native lifecycle hosts are **not implemented**.

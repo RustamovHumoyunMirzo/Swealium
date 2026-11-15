@@ -170,3 +170,7 @@ WindowFlags is a flags enum: None, Visible, Resizable, Borderless, AlwaysOnTop, 
 
 WindowClosingEvent is a sealed mutable event object with Cancel=false by default. Set Cancel inside Closing to veto a request; it cannot veto Dispose or forced owner teardown.
 
+
+## Rendering settings
+
+`SwealiumApplication.AntiAliasing` is a bool get/set defaulting to true; new contexts snapshot it and framework clips/strokes use it. Set on the UI thread during an active session. `SwealiumApplication.HardwareAcceleration` is a bool get/set defaulting to true; set before Run (any assignment during Run throws InvalidOperationException). Existing windows retain their backend. `SwealiumWindow.IsHardwareAccelerated` is a read-only bool requiring a live window and UI thread. `HardwareAccelerationFallbackReason` is a read-only nullable string containing an initialization fallback diagnostic, or null when disabled/successful. See [rendering contracts](../rendering.md).

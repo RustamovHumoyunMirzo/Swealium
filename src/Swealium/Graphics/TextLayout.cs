@@ -103,10 +103,10 @@ public sealed class TextLayout : IDisposable
         if (end && edge>start && PlainText[edge-1] is '\n' or '\r' or '\u2028' or '\u2029') edge--;
         return new(edge,end&&edge==limit&&lineIndex<block.Lines.Count-1);
     }
-    internal void Paint(SKCanvas canvas, Point origin, TextSelection? selection, Color? selectionColor)
+    internal void Paint(SKCanvas canvas, Point origin, TextSelection? selection, Color? selectionColor, bool antiAliasing = true)
     {
         Verify();
-        var options = new Kit.TextPaintOptions { SelectionHandleScale = 0 };
+        var options = new Kit.TextPaintOptions { SelectionHandleScale = 0, Edging = antiAliasing ? SKFontEdging.Antialias : SKFontEdging.Alias, ConfigurePaint = (paint, _, _) => paint.IsAntialias = antiAliasing };
         if (selection is { } range)
         {
             if (range.Length < 0 || range.Start < 0 || range.Start > PlainText.Length - range.Length)

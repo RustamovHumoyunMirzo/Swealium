@@ -3,6 +3,8 @@ namespace Swealium.Graphics;
 /// <summary>Frame-scoped drawing in logical coordinates. Do not retain a context after Draw returns.</summary>
 public abstract class DrawingContext
 {
+    /// <summary>Edge smoothing for subsequent operations in this context. Initialized from the application default.</summary>
+    public virtual bool AntiAliasing { get; set; } = SwealiumApplication.AntiAliasing;
     public void FillRectangle(Rect bounds, Color color, float cornerRadius = 0) => FillRectangle(bounds, color, new CornerRadii(cornerRadius));
     public abstract void FillRectangle(Rect bounds, Color color, CornerRadii radii);
     public void StrokeRectangle(Rect bounds, Color color, float thickness = 1, float cornerRadius = 0) =>

@@ -2,7 +2,7 @@
 
 [![Build and smoke test](https://github.com/RustamovHumoyunMirzo/Swealium/actions/workflows/build.yml/badge.svg)](https://github.com/RustamovHumoyunMirzo/Swealium/actions/workflows/build.yml)
 
-A .NET 10 retained-mode GUI framework using SDL3 windowing and SkiaSharp CPU rendering. Public drawing, layout, input, window, and native-interop types belong to Swealium.
+A .NET 10 retained-mode GUI framework using SDL3 windowing and SkiaSharp GPU rendering with CPU fallback. Public drawing, layout, input, window, and native-interop types belong to Swealium.
 
 ```csharp
 using Swealium;
@@ -41,3 +41,5 @@ dotnet pack src/Swealium -c Release -o artifacts
 - [Platform/deployment status](docs/platforms.md)
 
 Prerelease 0.1.0-alpha.1; no NuGet package is published. Windows x64 is locally verified. Linux/macOS have native assets and CI configuration but require target runtime verification. iOS/Android application hosts are not implemented. See the platform guide for dependencies and current limitations.
+
+[Rendering settings and GPU acceleration](docs/rendering.md) · Application defaults and per-context anti-aliasing.

@@ -12,6 +12,8 @@ if(args.Contains("--media-demo"))
     using var recorded=VectorImage.Create(new(0,0,240,140),drawing=>
     {drawing.FillRectangle(new(0,0,240,140),new Color(35,42,58));drawing.StrokePath(path,new Color(240,190,100),8,PathLineCap.Round);drawing.DrawText("Recorded vector",new Point(15,128),Color.White,18);});
     using var cursorPixels=svg.Rasterize(32,32);using var custom=Cursor.FromBitmap(cursorPixels,4,4);
+    SwealiumApplication.HardwareAcceleration = true;
+    SwealiumApplication.AntiAliasing = true;
     SwealiumApplication.Run(new(){Title="Swealium — bitmaps, vectors, and cursors",Width=980,Height=720},window=>
     {
         var root=new Container{Padding=new(24),Gap=16,Background=new(23,27,36)};

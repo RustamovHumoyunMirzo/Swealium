@@ -614,6 +614,7 @@ Behavior, defaults, and examples: [graphics](graphics.md).
 public abstract class Swealium.Graphics.DrawingContext
 {
     protected DrawingContext();
+    public bool AntiAliasing { get; set; }
     public void DrawBitmap(Swealium.Graphics.Bitmap bitmap, Swealium.Graphics.Point origin, float opacity = 1f, Swealium.Graphics.BitmapInterpolation interpolation = Swealium.Graphics.BitmapInterpolation.Linear);
     public virtual void DrawBitmap(Swealium.Graphics.Bitmap bitmap, Swealium.Graphics.Rect destination, Swealium.Graphics.Rect? source = null, float opacity = 1f, Swealium.Graphics.BitmapInterpolation interpolation = Swealium.Graphics.BitmapInterpolation.Linear, Swealium.Graphics.Rect? clip = null);
     public abstract void DrawLine(Swealium.Graphics.Point start, Swealium.Graphics.Point end, Swealium.Graphics.Color color, float thickness = 1f);
@@ -1786,6 +1787,8 @@ Behavior, defaults, and examples: [windowing](windowing.md).
 ```csharp
 public static class Swealium.SwealiumApplication
 {
+    public static bool AntiAliasing { get; set; }
+    public static bool HardwareAcceleration { get; set; }
     public static IReadOnlyList<Swealium.SwealiumWindow> Windows { get; }
     public static Swealium.SwealiumWindow CreateWindow(Swealium.WindowOptions? options = null);
     public static void Exit();
@@ -1815,6 +1818,7 @@ public class Swealium.SwealiumWindow : IDisposable
     public Swealium.Input.Cursor EffectiveCursor { get; }
     public Swealium.WindowFlags Flags { get; }
     public bool Focusable { get; set; }
+    public string? HardwareAccelerationFallbackReason { get; }
     public bool HasFocus { get; }
     public bool HasMouseFocus { get; }
     public bool HighPixelDensity { get; }
@@ -1823,6 +1827,7 @@ public class Swealium.SwealiumWindow : IDisposable
     public bool IsCloseRequested { get; }
     public bool IsDisposed { get; }
     public bool IsFullscreen { get; set; }
+    public bool IsHardwareAccelerated { get; }
     public bool IsInputBlocked { get; }
     public bool IsMaximized { get; }
     public bool IsMinimized { get; }

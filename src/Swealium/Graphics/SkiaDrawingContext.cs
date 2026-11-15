@@ -4,12 +4,14 @@ namespace Swealium.Graphics;
 internal sealed class SkiaDrawingContext(SKCanvas canvas) : DrawingContext
 {
     private bool active = true;
+    private bool antiAliasing = SwealiumApplication.AntiAliasing;
+    public override bool AntiAliasing { get { Verify(); return antiAliasing; } set { Verify(); antiAliasing = value; } }
     internal void End() => active = false;
     private void Verify() => ObjectDisposedException.ThrowIf(!active, this);
     private static SKRect ToRect(Rect r) => SKRect.Create(r.X, r.Y, r.Width, r.Height);
-    private static SKPaint Paint(Color c, float thickness = 0) => new()
+    private SKPaint Paint(Color c, float thickness = 0) => new()
     {
-        Color = new SKColor(c.R, c.G, c.B, c.A), IsAntialias = true,
+        Color = new SKColor(c.R, c.G, c.B, c.A), IsAntialias = AntiAliasing,
         Style = thickness > 0 ? SKPaintStyle.Stroke : SKPaintStyle.Fill, StrokeWidth = thickness
     };
     internal static SKRoundRect RoundRect(Rect bounds, CornerRadii radii)
@@ -54,7 +56,7 @@ internal sealed class SkiaDrawingContext(SKCanvas canvas) : DrawingContext
         Verify();
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(fontSize);
         using var layout = new TextLayout(text, new() { Foreground = color, FontSize = fontSize }, new() { Wrapping = TextWrapping.None });
-        layout.Paint(canvas, new(baseline.X, baseline.Y - layout.Baseline), null, null);
+        layout.Paint(canvas, new(baseline.X, baseline.Y - layout.Baseline), null, null, AntiAliasing);
     }
     public override Size MeasureText(string text, float fontSize = 16)
     {
@@ -71,7 +73,7 @@ internal sealed class SkiaDrawingContext(SKCanvas canvas) : DrawingContext
         var image=bitmap.NativeImage;
         if(destination.Width==0||destination.Height==0||crop.Width==0||crop.Height==0||opacity==0)return;
         var sampling=interpolation switch{BitmapInterpolation.Nearest=>new SKSamplingOptions(SKFilterMode.Nearest),BitmapInterpolation.Cubic=>new SKSamplingOptions(SKCubicResampler.Mitchell),_=>new SKSamplingOptions(SKFilterMode.Linear)};
-        using var paint=new SKPaint{Color=SKColors.White.WithAlpha((byte)MathF.Round(opacity*255)),IsAntialias=true};
+        using var paint=new SKPaint{Color=SKColors.White.WithAlpha((byte)MathF.Round(opacity*255)),IsAntialias=AntiAliasing};
         int saved=canvas.Save();
         try{if(clip is {} bounds){ImageLayout.ValidateRect(bounds);canvas.ClipRect(ToRect(bounds));}canvas.DrawImage(image,ToRect(crop),ToRect(destination),sampling,paint);}
         finally{canvas.RestoreToCount(saved);}
@@ -103,7 +105,7 @@ internal sealed class SkiaDrawingContext(SKCanvas canvas) : DrawingContext
     {
         Verify(); ArgumentNullException.ThrowIfNull(layout);
         int save = canvas.Save();
-        try { if (clip is { } bounds) canvas.ClipRect(ToRect(bounds)); layout.Paint(canvas, origin, selection, selectionColor); }
+        try { if (clip is { } bounds) canvas.ClipRect(ToRect(bounds)); layout.Paint(canvas, origin, selection, selectionColor, AntiAliasing); }
         finally { canvas.RestoreToCount(save); }
     }
 }

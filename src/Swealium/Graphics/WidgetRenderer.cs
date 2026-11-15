@@ -19,7 +19,7 @@ internal static class WidgetRenderer
             if (root.ClipToBounds)
             {
                 using var clip = SkiaDrawingContext.RoundRect(new(0, 0, root.ActualWidth, root.ActualHeight), root.Radii);
-                canvas.ClipRoundRect(clip, SKClipOperation.Intersect, true);
+                canvas.ClipRoundRect(clip, SKClipOperation.Intersect, SwealiumApplication.AntiAliasing);
             }
             var context = new SkiaDrawingContext(canvas);
             try { root.Draw(context); }

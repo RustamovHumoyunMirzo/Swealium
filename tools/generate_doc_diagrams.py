@@ -34,17 +34,17 @@ for x, label in [(40, "Native event queue"), (380, "Window ID routing"), (720, "
     body += box(x, 100, 280, 76, label)
 body += arrow(320,138,380,138) + arrow(660,138,720,138)
 body += arrow(860,176,860,242)
-for x, label, fill in [(40,"CPU Skia surface","#e6f5ef"), (380,"Widget Draw callbacks","#e6f5ef"), (720,"Logical measure / arrange","#e6f5ef")]:
+for x, label, fill in [(40,"GPU / raster Skia surface","#e6f5ef"), (380,"Widget Draw callbacks","#e6f5ef"), (720,"Logical measure / arrange","#e6f5ef")]:
     body += box(x, 245, 280, 76, label, fill, "#4a9784")
 body += arrow(720,283,660,283)+arrow(380,283,320,283)
 body += arrow(180,321,180,388)
-body += box(40,390,280,76,"Upload RGBA texture","#fff2d9","#bd8a35")
+body += box(40,390,280,76,"GPU submit / raster upload","#fff2d9","#bd8a35")
 body += box(380,390,280,76,"SDL presentation","#fff2d9","#bd8a35")
 body += box(720,390,280,76,"OS window / display","#fff2d9","#bd8a35")
 body += arrow(320,428,380,428)+arrow(660,428,720,428)
-body += text(40,525,"One UI loop. Separate surface, texture, and input tree per window.",20)
-body += text(40,554,"Layout is cached; visible raster frames currently render continuously.",17)
-figures["rendering-pipeline.svg"] = frame("Application-to-pixel pipeline", "Events route by portable window ID into logical layout and widget callbacks, then CPU pixels upload to SDL presentation.", body)
+body += text(40,525,"One UI loop. Separate surface, backend, and input tree per window.",20)
+body += text(40,554,"Layout is cached; visible frames currently render continuously.",17)
+figures["rendering-pipeline.svg"] = frame("Application-to-pixel pipeline", "Events route by portable window ID into logical layout and widget callbacks, then GPU submission or raster upload reaches SDL presentation.", body)
 
 body = box(42,96,956,414,"","#eef1f6","#99a7b6")
 body += text(66,126,"Container border box",20,weight="600")

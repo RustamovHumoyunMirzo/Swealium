@@ -76,3 +76,7 @@ The current backend uses antialiased CPU drawing and internal HarfBuzz paragraph
 
 The supplied implementation throws ObjectDisposedException when used after its callback scope. Bitmap/vector/path drawing is exposed through Swealium-owned media APIs; there is no public drawing-context Dispose, native canvas, or general save/restore/transform stack. Implementing a different DrawingContext does not automatically replace a window's internal backend; no backend injection API is currently exposed.
 
+
+## Anti-aliasing
+
+DrawingContext exposes virtual bool `AntiAliasing { get; set; }`. New contexts initialize it from SwealiumApplication.AntiAliasing. The Swealium implementation validates frame lifetime for both accessors. Overrides affect subsequent operations within that context only; image interpolation and previously recorded vector paints remain independent. See [rendering settings](../rendering.md).

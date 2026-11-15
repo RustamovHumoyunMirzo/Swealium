@@ -33,11 +33,11 @@ internal static class WidgetStrokeRenderer
         try
         {
             using var outer=SkiaDrawingContext.RoundRect(new(0,0,w,h),radius);
-            canvas.ClipRoundRect(outer,SKClipOperation.Intersect,true);
+            canvas.ClipRoundRect(outer,SKClipOperation.Intersect,SwealiumApplication.AntiAliasing);
             if (iw>0&&ih>0)
             {
                 using var inner=new SKRoundRect();inner.SetRectRadii(SKRect.Create(l,t,iw,ih),innerRadii);
-                canvas.ClipRoundRect(inner,SKClipOperation.Difference,true);
+                canvas.ClipRoundRect(inner,SKClipOperation.Difference,SwealiumApplication.AntiAliasing);
             }
             var vertices=new List<SKPoint>();var colors=new List<SKColor>();
             var dots=new List<(SKPoint Center,float Radius,SKColor Color)>();
@@ -77,7 +77,7 @@ internal static class WidgetStrokeRenderer
                 }
                 phase=end;
             }
-            using var paint=new SKPaint{Color=SKColors.White,IsAntialias=true};
+            using var paint=new SKPaint{Color=SKColors.White,IsAntialias=SwealiumApplication.AntiAliasing};
             if(vertices.Count>0)
             {
                 using var mesh=SKVertices.CreateCopy(SKVertexMode.Triangles,vertices.ToArray(),colors.ToArray());

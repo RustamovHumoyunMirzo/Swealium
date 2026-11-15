@@ -14,6 +14,7 @@ public partial class SwealiumWindow : IDisposable
     private readonly int ownerThread = Environment.CurrentManagedThreadId;
     private readonly WindowOptions options;
     private nint window, renderer, texture;
+    private GpuWindowSurface? gpu;
     private SKSurface? surface;
     private SKBitmap? bitmap;
     private bool disposed, rendering, textInputActive;
@@ -47,9 +48,28 @@ public partial class SwealiumWindow : IDisposable
         if (this.options.IsModal) previousOwnerFocus = owner?.Input.FocusedWidget;
         try
         {
-            window = CreateNativeWindow();
-            renderer = Sdl.Check(Sdl.SDL_CreateRenderer(window, 0));
-            _ = Sdl.SDL_SetRenderVSync(renderer, 0); // One application-wide frame clock serves every window.
+            if (SwealiumApplication.HardwareAcceleration)
+            {
+                try
+                {
+                    GpuWindowSurface.Configure();
+                    window = CreateNativeWindow(true);
+                    gpu = new GpuWindowSurface(window);
+                }
+                catch (Exception error) when (error is InvalidOperationException or NotSupportedException)
+                {
+                    HardwareAccelerationFallbackReason = error.Message;
+                    gpu?.Dispose(); gpu = null;
+                    if (window != 0) Sdl.SDL_DestroyWindow(window);
+                    window = 0;
+                }
+            }
+            if (gpu is null)
+            {
+                window = CreateNativeWindow();
+                renderer = Sdl.Check(Sdl.SDL_CreateNamedRenderer(window, "software"));
+                _ = Sdl.SDL_SetRenderVSync(renderer, 0);
+            } // One application-wide frame clock serves every window.
             Id = Sdl.SDL_GetWindowID(window);
             Input.FocusChanged += SyncTextInput;
             Input.CompositionCancellationRequested += CancelNativeComposition;
@@ -66,7 +86,11 @@ public partial class SwealiumWindow : IDisposable
         }
         catch { Dispose(); throw; }
     }
-    private nint CreateNativeWindow()
+    /// <summary>True when this window uses a GPU-backed Skia surface.</summary>
+    public bool IsHardwareAccelerated { get { VerifyAccess(); return gpu is not null; } }
+    /// <summary>Initialization failure that caused raster fallback, or null if not attempted/successful.</summary>
+    public string? HardwareAccelerationFallbackReason { get; private set; }
+    private nint CreateNativeWindow(bool openGl = false)
     {
         uint properties = Sdl.SDL_CreateProperties();
         Sdl.Check(properties != 0);
@@ -76,6 +100,7 @@ public partial class SwealiumWindow : IDisposable
             Sdl.Check(Sdl.SDL_SetNumberProperty(properties, "SDL.window.create.width", options.Width));
             Sdl.Check(Sdl.SDL_SetNumberProperty(properties, "SDL.window.create.height", options.Height));
             Sdl.Check(Sdl.SDL_SetBooleanProperty(properties, "SDL.window.create.hidden", true));
+            if (openGl) Sdl.Check(Sdl.SDL_SetBooleanProperty(properties, "SDL.window.create.opengl", true));
             Sdl.Check(Sdl.SDL_SetBooleanProperty(properties, "SDL.window.create.high_pixel_density", options.HighPixelDensity));
             Sdl.Check(Sdl.SDL_SetBooleanProperty(properties, "SDL.window.create.focusable", options.Focusable));
             if (options.Position is { } position)
@@ -191,6 +216,7 @@ public partial class SwealiumWindow : IDisposable
         VerifyAccess();
         if (rendering) throw new InvalidOperationException("Rendering cannot be reentered.");
         if (!IsVisible || IsMinimized) return;
+        using var previousGpuContext = gpu is null ? default(GpuWindowSurface.CurrentScope) : new GpuWindowSurface.CurrentScope(0);
         rendering = true;
         try
         {
@@ -199,10 +225,22 @@ public partial class SwealiumWindow : IDisposable
             SyncCursor();
             SyncTextInput();
             Accessibility.RefreshIfObserved();
-            Sdl.Check(Sdl.SDL_GetRenderOutputSize(renderer, out int width, out int height));
-            if (width <= 0 || height <= 0 || ClientSize.Width <= 0 || ClientSize.Height <= 0) return;
-            if (bitmap is null || bitmap.Width != width || bitmap.Height != height) ResizeSurface(width, height);
-            var canvas = surface!.Canvas;
+            int width, height;
+            SKSurface? frame;
+            if (gpu is not null)
+            {
+                frame = gpu.Acquire();
+                (width, height) = gpu.Size;
+            }
+            else
+            {
+                Sdl.Check(Sdl.SDL_GetRenderOutputSize(renderer, out width, out height));
+                if (width <= 0 || height <= 0) return;
+                if (bitmap is null || bitmap.Width != width || bitmap.Height != height) ResizeSurface(width, height);
+                frame = surface;
+            }
+            if (frame is null || ClientSize.Width <= 0 || ClientSize.Height <= 0) return;
+            var canvas = frame.Canvas;
             var background = Background;
             canvas.Clear(new SKColor(background.R, background.G, background.B, background.A));
             int saved = canvas.Save();
@@ -222,10 +260,14 @@ public partial class SwealiumWindow : IDisposable
             }
             finally { canvas.RestoreToCount(saved); }
             canvas.Flush();
-            Sdl.Check(Sdl.SDL_UpdateTexture(texture, 0, bitmap!.GetPixels(), bitmap.RowBytes));
-            Sdl.Check(Sdl.SDL_RenderClear(renderer));
-            Sdl.Check(Sdl.SDL_RenderTexture(renderer, texture, 0, 0));
-            Sdl.Check(Sdl.SDL_RenderPresent(renderer));
+            if (gpu is not null) gpu.Present();
+            else
+            {
+                Sdl.Check(Sdl.SDL_UpdateTexture(texture, 0, bitmap!.GetPixels(), bitmap.RowBytes));
+                Sdl.Check(Sdl.SDL_RenderClear(renderer));
+                Sdl.Check(Sdl.SDL_RenderTexture(renderer, texture, 0, 0));
+                Sdl.Check(Sdl.SDL_RenderPresent(renderer));
+            }
         }
         finally { rendering = false; }
     }
@@ -272,6 +314,7 @@ public partial class SwealiumWindow : IDisposable
     internal nint NativeHandle { get { VerifyAccess(); return window; } }
     private void ReleaseSurface()
     {
+        gpu?.ReleaseSurface();
         if (texture != 0) Sdl.SDL_DestroyTexture(texture);
         texture = 0;
         surface?.Dispose(); surface = null;
@@ -294,6 +337,7 @@ public partial class SwealiumWindow : IDisposable
         Input.FocusChanged -= SyncTextInput;
         Input.CompositionCancellationRequested -= CancelNativeComposition;
         SdlCursorManager.ReleaseWindow(window);
+        gpu?.Dispose(); gpu = null;
         ReleaseSurface();
         if (renderer != 0) Sdl.SDL_DestroyRenderer(renderer);
         if (window != 0) Sdl.SDL_DestroyWindow(window);

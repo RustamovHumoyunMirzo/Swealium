@@ -8,6 +8,15 @@ namespace Swealium;
 public static class SwealiumApplication
 {
     private static int running;
+    private static bool antiAliasing = true, hardwareAcceleration = true;
+    /// <summary>Default edge smoothing for new drawing contexts. May change on the UI thread between frames.</summary>
+    public static bool AntiAliasing { get => Volatile.Read(ref antiAliasing); set { VerifyAccess(); Volatile.Write(ref antiAliasing, value); } }
+    /// <summary>Prefer GPU-backed Skia for new windows, falling back to raster if unavailable. Set before Run.</summary>
+    public static bool HardwareAcceleration
+    {
+        get { VerifyAccess(); return hardwareAcceleration; }
+        set { VerifyAccess(); if (Volatile.Read(ref running) != 0) throw new InvalidOperationException("Set HardwareAcceleration before Run."); hardwareAcceleration = value; }
+    }
     private static Session? current;
     /// <summary>A snapshot of application-managed windows. Access on the UI thread.</summary>
     public static IReadOnlyList<SwealiumWindow> Windows
