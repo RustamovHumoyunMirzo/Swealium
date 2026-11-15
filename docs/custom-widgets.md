@@ -86,3 +86,7 @@ Override ContainsPoint(local) for a custom analytic hit shape. Respect ActualWid
 
 Do not dispose or store DrawingContext. Dispose application-owned external resources when appropriate, and unsubscribe long-lived event sources if they retain removed widgets. Removing a widget detaches it from its parent but does not dispose it; Widget has no IDisposable lifecycle. A window's Content root cannot be shared with another input tree or parent at the same time.
 
+
+## Custom text editors
+
+Attach a Swealium.Input.TextEditor to your Widget and call Editor.Draw during drawing. Widget dispatch automatically supplies selection, editing, clipboard/history, IME preedit, candidate overlays, and caret positioning without TextBox inheritance. See the [complete composition example](text-selection.md#composition-instead-of-inheritance). Raw text/composition/candidate events remain available for a fully independent engine.

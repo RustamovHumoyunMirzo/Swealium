@@ -36,6 +36,7 @@ foreach (Type type in types)
     {
         _ when typeof(Widget).IsAssignableFrom(type) => "../widgets/"+WidgetPage(type),
         "Swealium.Graphics" when type.Name.StartsWith("Gradient",StringComparison.Ordinal) => "gradients.md",
+        _ when type.Name is "SharedTextSelection" or "TextSelectionPart" => "text.md",
         "Swealium.Accessibility" => "accessibility.md",
         _ when type.Name is "Cursor" or "CursorKind" => "../cursors.md",
         "Swealium.Graphics" when type.Name.StartsWith("Bitmap",StringComparison.Ordinal)||type.Name.StartsWith("Vector",StringComparison.Ordinal)||type.Name.StartsWith("Image",StringComparison.Ordinal)||type.Name.StartsWith("Path",StringComparison.Ordinal) => "media.md",

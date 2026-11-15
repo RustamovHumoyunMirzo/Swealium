@@ -90,3 +90,7 @@ A focused widget must set AcceptsTextInput=true. Native text-service activation 
 ## Contact snapshots and capture
 
 `Pointers` returns read-only PointerInfo snapshots; `GetPointer(PointerId)` returns one or null. `GetCapturedWidget(PointerId)` queries per-contact capture. `CapturePointer(PointerId, Widget)` and `ReleasePointerCapture(PointerId)` manage capture; `CancelPointer(PointerId)` cancels a contact. `PointerCaptureChanged` publishes PointerCaptureChangedEvent with identity, previous, and current widget. CapturedWidget remains a compatibility view of the mouse or primary contact.
+
+PointerEvent adds optional int clickCount=0 and read-only ClickCount. Negative values throw ArgumentOutOfRangeException. SDL mouse button events supply their native click count; zero leaves repeated-click tracking to the attached TextEditor. Other hosts can provide counts explicitly.
+
+InputManager.TextSelection is a get-only SharedTextSelection owned by that manager. Selectable Text widgets share its cross-widget range and copy buffer; editable models remain separate. See [shared selection contracts](text.md#sharedtextselection-and-textselectionpart).

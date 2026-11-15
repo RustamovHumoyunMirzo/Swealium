@@ -85,7 +85,8 @@ public abstract class Widget
     /// <summary>Opt in to Unicode text events and the platform text input service when focused.</summary>
     public bool AcceptsTextInput { get; set; }
     /// <summary>Local logical rectangle used to anchor native input-method UI.</summary>
-    public virtual Rect TextInputArea => ContentBounds;
+    public TextEditor? TextEditor {get;internal set;}
+    public virtual Rect TextInputArea => TextEditor is {IsEnabled:true} editor?editor.TextInputArea:ContentBounds;
     public bool IsFocused { get; internal set; }
     public bool IsPointerOver { get; internal set; }
     public Container? Parent { get; internal set; }
@@ -194,12 +195,12 @@ public abstract class Widget
     protected virtual void OnCompositionInput(TextCompositionEvent e) { }
     protected virtual void OnCandidatesInput(TextCandidatesEvent e) { }
     protected virtual void OnFocusChanged() { }
-    internal void RaisePointer(PointerEvent e) { OnPointerInput(e); PointerInput?.Invoke(e); }
-    internal void RaiseKey(KeyEvent e) { OnKeyboardInput(e); KeyboardInput?.Invoke(e); }
-    internal void RaiseText(TextInputEvent e) { OnTextInput(e); TextInput?.Invoke(e); }
-    internal void RaiseComposition(TextCompositionEvent e) { OnCompositionInput(e); CompositionInput?.Invoke(e); }
-    internal void RaiseCandidates(TextCandidatesEvent e) { OnCandidatesInput(e); CandidatesInput?.Invoke(e); }
-    internal void RaiseFocus() { OnFocusChanged(); FocusChanged?.Invoke(); }
+    internal void RaisePointer(PointerEvent e) { OnPointerInput(e); TextEditor?.ProcessPointer(e); PointerInput?.Invoke(e); }
+    internal void RaiseKey(KeyEvent e) { OnKeyboardInput(e); TextEditor?.ProcessKey(e); KeyboardInput?.Invoke(e); }
+    internal void RaiseText(TextInputEvent e) { OnTextInput(e); if(!e.Handled)TextEditor?.ProcessText(e); TextInput?.Invoke(e); }
+    internal void RaiseComposition(TextCompositionEvent e) { OnCompositionInput(e); if(!e.Handled)TextEditor?.ProcessComposition(e); CompositionInput?.Invoke(e); }
+    internal void RaiseCandidates(TextCandidatesEvent e) { OnCandidatesInput(e); if(!e.Handled)TextEditor?.ProcessCandidates(e); CandidatesInput?.Invoke(e); }
+    internal void RaiseFocus() { OnFocusChanged(); TextEditor?.FocusChanged(); FocusChanged?.Invoke(); }
     internal bool IsInteractable => IsVisible && IsEnabled && (Parent?.IsInteractable ?? true);
     internal Point ToLocal(Point point)
     {

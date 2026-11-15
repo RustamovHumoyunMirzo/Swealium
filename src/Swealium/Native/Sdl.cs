@@ -97,6 +97,7 @@ internal static partial class Sdl
         [FieldOffset(20)] public int Data1;
         [FieldOffset(24)] public int Data2;
         [FieldOffset(24)] public byte Button;
+        [FieldOffset(26)] public byte Clicks;
         [FieldOffset(28)] public float MouseX;
         [FieldOffset(32)] public float MouseY;
         [FieldOffset(24)] public float WheelX;

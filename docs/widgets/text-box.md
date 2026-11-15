@@ -10,7 +10,9 @@
 | Style | Default immutable TextStyle; validated; invalidates layout |
 | Multiline | false; enables newlines and width wrapping; false normalizes existing line breaks |
 | IsReadOnly | false; blocks editing/history/cut/paste, leaves selection/copy available; updates AcceptsTextInput and cancels composition |
-| Placeholder | Empty nonnull string; shown gray while committed and preedit text are empty |
+| Placeholder | Empty nonnull string; shown while committed and preedit text are empty |
+| PlaceholderColor | RGB(140,140,145), independently configurable; solid or gradient |
+| Editor | Read-only reusable TextEditor controller owned by this widget |
 | Background / BorderColor | White / RGB(130,130,140); BorderColor supplies the resting default Stroke |
 | FocusStroke | 1-unit blue Solid; ordinary Stroke rendering, used only when Stroke has not been explicitly set |
 | SelectionColor | RGBA(70,110,210,100) |
@@ -18,7 +20,7 @@
 | CompositionText | Read-only uncommitted preedit; initially empty |
 | Candidates / SelectedCandidate / CandidatesHorizontal | Read-only snapshot, -1 for no selection, false initial orientation |
 | CanUndo / CanRedo | Read-only history availability |
-| TextInputArea | Override returning local scrolled caret rectangle for IME placement |
+| TextInputArea | Inherited virtual property returning the attached controller's local scrolled caret rectangle |
 
 ```csharp
 var editor = new TextBox { Multiline = true, Height = 180, Text = "A draft\nمرحبا" };
@@ -53,3 +55,5 @@ Preedit is underlined with selected-segment background. A native commit replaces
 The editor is not virtualized and has no rich-document editing, password masking or syntax-highlighting API. Use finite Height for a bounded editor viewport; otherwise content participates in intrinsic sizing (minimum one line, or three lines in multiline mode).
 
 Selection dragging belongs to one pointer until release/cancellation. Semantic value and selection actions are available through the [accessibility boundary](../accessibility.md); native screen-reader adapters are not bundled.
+
+Double click selects a Unicode word, triple click a visual line, and four clicks all text. Word/line dragging expands by the selected unit. TextBox delegates to its Editor; custom widgets can attach the same TextEditor without inheriting TextBox. See [selection and composition](../text-selection.md).

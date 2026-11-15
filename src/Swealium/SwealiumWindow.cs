@@ -252,7 +252,7 @@ public partial class SwealiumWindow : IDisposable
                 try { OnPaint(context, ClientSize); }
                 finally { context.End(); }
                 if (Content is { } root) WidgetRenderer.Render(canvas, root);
-                if (Input.FocusedWidget is TextBox editor)
+                if (Input.FocusedWidget?.TextEditor is {IsEnabled:true} editor)
                 {
                     var overlay = new SkiaDrawingContext(canvas);
                     try { editor.DrawCandidates(overlay, ClientSize); }

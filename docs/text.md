@@ -109,3 +109,7 @@ Run the interactive example:
 ```sh
 dotnet run --project samples/Swealium.Sample -- --text-demo
 ```
+
+## Selection and reusable editing
+
+TextBox supports double-click word, triple-click visual line, and four-click select-all gestures. Text.Selectable adds read-only selection/copy, including formatted HTML. PlaceholderColor independently styles TextBox placeholders. TextEditor composes the existing engine into custom Widget classes, with automatic IME/candidate plumbing. See [selection and custom editors](text-selection.md).

@@ -4,6 +4,21 @@ using Swealium.Input;
 using Swealium.UI;
 
 bool smokeTest = args.Contains("--smoke-test");
+if(args.Contains("--selection-demo"))
+{
+    SwealiumApplication.Run(new(){Title="Swealium - text selection and composition",Width=850,Height=620},window=>
+    {
+        var root=new Container{Padding=new(24),Gap=18,Background=new(25,30,42)};
+        root.Children.Add(new Text{Content="Double click: word. Triple click: line. Fourth click: all.",Selectable=true,Style=new(){FontSize=23,Foreground=Color.White}});
+        root.Children.Add(new Text{Content="<b>Drag from the heading into this paragraph</b>: one shared selection. Unicode: éclair, 日本語, مرحبا, 😀",Markup=TextMarkup.Html,Selectable=true,Style=new(){FontSize=20,Foreground=new(185,220,250)}});
+        root.Children.Add(new TextBox{Placeholder="A custom placeholder color",PlaceholderColor=Gradient.Horizontal(new(160,70,210),new(20,145,170)),Height=50});
+        root.Children.Add(new TextBox{Multiline=true,Text="Try word selection, whole-line dragging, or select all.\nThis is the standard TextBox.",Height=110});
+        var custom=new ComposedSampleEditor{Height=150};custom.Editor.Text="This editor inherits Widget directly.\nEditing, clipboard, undo, selection, and IME come from TextEditor.";
+        root.Children.Add(custom);window.Content=root;
+        if(smokeTest){window.Input.Focus(custom);window.Input.ProcessComposition(new("preedit"));window.Input.ProcessCandidates(new(new[]{"candidate"},0));int frames=0;window.Paint+=(_,_)=>{if(++frames==3)window.RequestClose();};}
+    });
+    return;
+}
 if(args.Contains("--gradient-demo"))
 {
     Color purple=new(145,80,235),teal=new(25,205,185),gold=new(255,190,65);
@@ -258,3 +273,15 @@ static Container CloseContent(SwealiumWindow target, string text)
     return content;
 }
 
+
+internal sealed class ComposedSampleEditor:Widget
+{
+    public ComposedSampleEditor(){Editor=new(this){Multiline=true,Style=new(){FontSize=18,Foreground=new(235,240,255)}};Padding=new(12);Radii=new(10);Stroke=new(2,new(85,135,190));}
+    public TextEditor Editor {get;}
+    protected override Size MeasureContent(Size available)=>Editor.Measure(available);
+    public override void Draw(DrawingContext drawing)
+    {
+        drawing.FillRectangle(new(0,0,ActualWidth,ActualHeight),new Color(40,50,70),Radii);
+        Editor.Draw(drawing);
+    }
+}

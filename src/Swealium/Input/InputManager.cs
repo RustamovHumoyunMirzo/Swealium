@@ -5,6 +5,8 @@ namespace Swealium.Input;
 /// <summary>Routes framework input through a retained tree. Use only on the UI thread.</summary>
 public sealed class InputManager
 {
+    public InputManager(){TextSelection=new(this);}
+    public SharedTextSelection TextSelection {get;}
     private Widget? root;
     private sealed class Contact(PointerId id)
     {
@@ -43,6 +45,7 @@ public sealed class InputManager
             if (ReferenceEquals(root, value)) return;
             if (value?.Parent is not null) throw new InvalidOperationException("The root cannot have a parent.");
             if (value?.RootOwner is not null) throw new InvalidOperationException("The widget is already another input tree's root.");
+            TextSelection.Clear();
             Cancel();
             if (root is not null) root.RootOwner = null;
             root = value;
@@ -106,6 +109,7 @@ public sealed class InputManager
     internal void Validate()
     {
         if (CanProcessInput?.Invoke() == false) { Cancel(); return; }
+        TextSelection.Validate(true);
         if (FocusedWidget is not null && (!IsAttached(FocusedWidget) || !FocusedWidget.IsFocusable)) Focus(null);
         foreach(var pointer in pointers.Values.ToArray())
         {
@@ -140,6 +144,7 @@ public sealed class InputManager
         Widget? target = state.Captured ?? hit;
         if (e.Kind == PointerEventKind.Down && e.Button == PointerButton.Primary)
         {
+            if(e.IsPrimary&&hit is not Text{Selectable:true})TextSelection.Clear();
             ChangeCapture(state,null,true);state.Pressed=hit;ChangeCapture(state,hit,false);
             target = hit;
             Widget? focusTarget = hit;
@@ -166,6 +171,8 @@ public sealed class InputManager
         Modifiers=e.Modifiers;
         Validate();
         if (FocusedWidget is { } focused) Route(focused, e, widget => widget.RaiseKey(e));
+        bool command=(e.Modifiers&(KeyModifiers.Control|KeyModifiers.Super))!=0&&!e.Modifiers.HasFlag(KeyModifiers.Alt);
+        if(!e.Handled&&e.IsDown&&command&&e.Key==Key.C&&TextSelection.SelectedText.Length>0){TextSelection.Copy();e.Handled=true;}
         if (!e.Handled && e.IsDown && !e.IsRepeat && e.Key == Key.Tab)
         {
             List<Widget> candidates = [];

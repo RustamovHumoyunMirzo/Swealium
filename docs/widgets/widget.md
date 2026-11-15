@@ -112,3 +112,7 @@ Draw in local logical units, use ActualWidth/Height, and do not retain DrawingCo
 `Opacity` defaults to 1 and accepts finite values from 0 to 1. It composites the widget, descendants, overlays, and stroke as one group; nested opacity multiplies. Zero opacity suppresses painting but preserves layout, hit testing, and accessibility. Image and VectorGraphics inherit this property.
 
 `Accessibility` exposes mutable semantic metadata. Override protected `OnAccessibilityAction(AccessibilityActionRequest)` for custom actions. See [accessibility contracts](../api/accessibility.md).
+
+## Attached text editing
+
+TextEditor is a get-only nullable controller attached by `new Swealium.Input.TextEditor(this)`. Default TextInputArea uses its scrolled caret area while enabled. Unhandled input routes through the controller after protected hooks and before public events; window candidate overlays and semantic editing actions recognize it. See [custom editing without TextBox inheritance](../text-selection.md#composition-instead-of-inheritance).

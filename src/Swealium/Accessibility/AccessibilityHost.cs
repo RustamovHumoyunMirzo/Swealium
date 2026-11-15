@@ -35,13 +35,13 @@ public sealed class AccessibilityHost
             Rect visible=Intersection(bounds,clip);enabled&=widget.IsEnabled;
             var state=enabled?AccessibilityState.Enabled:AccessibilityState.None;
             if(widget.IsFocusable)state|=AccessibilityState.Focusable;if(widget.IsFocused)state|=AccessibilityState.Focused;
-            if(widget is TextBox{IsReadOnly:true})state|=AccessibilityState.ReadOnly;
+            if(widget.TextEditor is {IsEnabled:true,IsReadOnly:true})state|=AccessibilityState.ReadOnly;
             if(!Window.IsVisible||visible.Width<=0||visible.Height<=0)state|=AccessibilityState.Offscreen;
             string text=widget switch{Button b=>b.Text,Text t=>t.Markup==TextMarkup.Html?string.Concat(HtmlText.Parse(t.Content,t.Style).Select(r=>r.Text)):t.Content,_=>""};
-            string name=a.Name??(widget is TextBox editor?editor.Placeholder:text);
-            string? value=a.ExposeValue&&widget is TextBox box?box.Text:null;
-            var selection=widget is TextBox select?select.Selection:default;
-            var role=a.Role==AccessibilityRole.Automatic?widget switch{Button=>AccessibilityRole.Button,Text=>AccessibilityRole.Text,TextBox=>AccessibilityRole.TextBox,Image or VectorGraphics=>AccessibilityRole.Image,ScrollContainer=>AccessibilityRole.ScrollArea,Container=>AccessibilityRole.Group,_=>AccessibilityRole.Custom}:a.Role;
+            string name=a.Name??(widget is Text?text:widget.TextEditor is {IsEnabled:true} editor?editor.Placeholder:text);
+            string? value=a.ExposeValue&&widget.TextEditor is {IsEnabled:true} box?box.Text:null;
+            var selection=widget.TextEditor is {IsEnabled:true} select?select.Selection:default;
+            var role=a.Role==AccessibilityRole.Automatic?widget switch{Button=>AccessibilityRole.Button,Text=>AccessibilityRole.Text,TextBox=>AccessibilityRole.TextBox,Image or VectorGraphics=>AccessibilityRole.Image,ScrollContainer=>AccessibilityRole.ScrollArea,Container=>AccessibilityRole.Group,_ when widget.TextEditor is {IsEnabled:true}=>AccessibilityRole.TextBox,_=>AccessibilityRole.Custom}:a.Role;
             var actions=Actions(widget);
             nodes.Add(new(widget.SemanticId,parent,role,name,a.Description??"",a.AutomationId??"",a.HelpText??"",bounds,visible,state,actions,value,
                 a.ExposeValue?selection.Start:0,a.ExposeValue?selection.Length:0,a.LiveRegion));widgets.Add(widget.SemanticId,widget);
@@ -59,7 +59,7 @@ public sealed class AccessibilityHost
         var actions=AccessibilityActions.ScrollIntoView;
         if(widget.IsFocusable)actions|=AccessibilityActions.Focus;
         if(widget is Button)actions|=AccessibilityActions.Invoke;
-        if(widget is TextBox box){actions|=AccessibilityActions.SetSelection;if(!box.IsReadOnly)actions|=AccessibilityActions.SetValue;}
+        if(widget.TextEditor is {IsEnabled:true} box){actions|=AccessibilityActions.SetSelection;if(!box.IsReadOnly)actions|=AccessibilityActions.SetValue;}
         if(widget is ScrollContainer)actions|=AccessibilityActions.ScrollBy;
         return actions;
     }
@@ -93,8 +93,8 @@ public sealed class AccessibilityHost
             {
                 case AccessibilityAction.Invoke when widget is Button:widget.PerformClick();handled=true;break;
                 case AccessibilityAction.Focus:handled=Window.Input.Focus(widget);break;
-                case AccessibilityAction.SetValue when widget is TextBox{IsReadOnly:false} editor&&request.Value is not null:editor.Text=request.Value;handled=true;break;
-                case AccessibilityAction.SetSelection when widget is TextBox editor:
+                case AccessibilityAction.SetValue when widget.TextEditor is {IsEnabled:true,IsReadOnly:false} editor&&request.Value is not null:editor.Text=request.Value;handled=true;break;
+                case AccessibilityAction.SetSelection when widget.TextEditor is {IsEnabled:true} editor:
                     if(request.SelectionStart<0||request.SelectionLength<0||request.SelectionStart>editor.Text.Length-request.SelectionLength)return false;
                     editor.Select(request.SelectionStart,request.SelectionLength);handled=true;break;
                 case AccessibilityAction.ScrollIntoView:

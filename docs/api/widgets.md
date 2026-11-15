@@ -169,3 +169,5 @@ Grid, GridLength, GridUnit, GridTrack, and GridTrackCollection are documented in
 `Opacity` defaults to 1 and accepts finite values from 0 to 1. It composites the widget, descendants, overlays, and stroke as one group; nested opacity multiplies. Zero opacity suppresses painting but preserves layout, hit testing, and accessibility. Image and VectorGraphics inherit this property.
 
 `Accessibility` exposes mutable semantic metadata. Override protected `OnAccessibilityAction(AccessibilityActionRequest)` for custom actions. See [accessibility contracts](accessibility.md).
+
+Widget.TextEditor is a get-only nullable attachment, set by the TextEditor constructor. Default TextInputArea uses that controller when enabled. Dispatch invokes protected hooks, unhandled controller input, then public events. See [TextEditor contracts](text.md#texteditor-composition-controller).

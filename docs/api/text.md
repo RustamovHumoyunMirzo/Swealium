@@ -60,7 +60,9 @@ Subclassable Widget. Defaults: Text/Placeholder empty, Multiline=false, IsReadOn
 | Text | Committed plain text; normalized LF (spaces for single-line), NUL removed; assigning a changed value clears undo/redo and composition |
 | Style | Shared immutable paragraph style; setter validates and invalidates layout |
 | Multiline | Enables width wrapping/newlines; changing to false normalizes existing line breaks |
-| Placeholder | Displayed in gray only while committed and composition text are empty; assign a nonnull string |
+| Placeholder | Displayed only while committed and composition text are empty; assign a nonnull string |
+| PlaceholderColor | RGB(140,140,145) by default; independent solid/gradient foreground |
+| Editor | Get-only TextEditor controller, also exposed through Widget.TextEditor |
 | Selection / CaretIndex / SelectedText | Read-only UTF-16 range, active end, and selected substring |
 | Select(start,length) / SelectAll | Validate range; snap endpoints to preceding grapheme boundaries; cancel composition |
 | ReplaceSelection(string) | Undoable normalized edit; null rejected; no operation in read-only mode |
@@ -84,3 +86,43 @@ Widget exposes CompositionInput/CandidatesInput events and protected OnCompositi
 ## Clipboard
 
 `Swealium.Clipboard.GetText()` returns native clipboard Unicode text, or empty if SDL reports no text/failure. `SetText(string)` rejects null/NUL and throws InvalidOperationException on a native failure. Both require an initialized native host and its UI thread; SwealiumApplication checks thread ownership while running. There is no headless managed fallback or rich clipboard format API.
+
+## Selection ranges
+
+TextLayout.HitTestCharacter(Point) returns the UTF-16 character/grapheme position under a point rather than its nearest insertion edge, falling back to the nearest position outside glyphs. GetWordRange(int index) returns a TextSelection using Unicode letter/number/mark groups and whitespace/punctuation boundaries. GetLineRange(TextPosition) returns the containing visual line excluding CR/LF/Unicode line terminators and respecting wrapped caret affinity. Invalid indices throw ArgumentOutOfRangeException; empty text returns an empty range. Methods require an undisposed layout.
+
+Text exposes Selectable (false), SelectionColor, Selection, SelectedText, Select(int,int), SelectAll(), Copy(), and SelectionChanged. Its attached controller is read-only and follows decoded PlainText indices for HTML. Selection snapping uses grapheme boundaries. See [Text widget](../widgets/text.md) and [selection rules](../text-selection.md).
+
+## TextEditor composition controller
+
+Namespace Swealium.Input. Sealed; constructor TextEditor(Widget owner) rejects null or an owner with an existing controller. It attaches once, updates Owner.IsFocusable/AcceptsTextInput/Cursor, and becomes available via Owner.TextEditor. No IDisposable contract; state shares its owner's UI-thread lifetime. Frame contexts are borrowed and never retained.
+
+| Members | Contract |
+| --- | --- |
+| Owner | Get-only attached Widget |
+| IsEnabled | true; suppresses automatic editing input when false and resets drag/composition; controls Owner.AcceptsTextInput together with IsReadOnly |
+| Viewport | Rect? null; defaults Owner.ContentBounds, setter requires finite nonnegative local rectangle |
+| LayoutFactory | Func&lt;float,TextLayout&gt;? null; read-only display override; fresh returned layout transfers ownership and must have PlainText equal Text |
+| VerticalAlignment | Top; validates TextVerticalAlignment; offsets drawing and hit testing consistently |
+| Text / Style / Multiline / IsReadOnly | Same text normalization, layout, read-only, and history contracts as TextBox; defaults empty/new TextStyle/false/false |
+| Placeholder / PlaceholderColor / SelectionColor | Empty / RGB(140,140,145) / RGBA(70,110,210,100) |
+| CandidateBackground / CandidateBorderColor | White / RGB(130,130,140); popup colors; Draw does not paint owner chrome |
+| Selection / CaretIndex / SelectedText | Get-only UTF-16 model selection and active end |
+| CompositionText / Candidates / SelectedCandidate / CandidatesHorizontal | Same preedit/candidate snapshots as TextBox |
+| CanUndo / CanRedo | Get-only history availability |
+| TextInputArea | Get-only local scrolled caret rectangle for Widget/native IME placement |
+| Measure(Size available) | Shaped intrinsic size; existing editor minimum 80 wide and one/three lines in single/multiline mode |
+| Draw(DrawingContext) | Paint text/placeholder/selection/caret inside Viewport; no owner background/stroke |
+| DrawCandidates(DrawingContext,Size viewport) | Draw candidate overlay in window coordinates; SwealiumWindow calls it automatically for enabled focused controllers |
+| Select / SelectAll / ReplaceSelection / Copy / Cut / Paste / Undo / Redo / CancelComposition | Same methods/validation as TextBox |
+| TextChanged / SelectionChanged / Submitted | Same Action event semantics as TextBox |
+
+Widget routes unhandled pointer/key/text/composition/candidate input automatically after protected hooks and before public input events. Focus notifications cancel transient state on loss. Raw Widget events still support independent editing engines. Set a custom Viewport during arrangement so IME and pointer input agree before painting. Editable controllers use the built-in plain-text layout; LayoutFactory is read-only-only behavior. Text widgets permanently lock their controller's IsReadOnly flag; setting it false throws InvalidOperationException.
+
+Repeated clicks select word/visual line/all at counts 2/3/4+. SDL supplies PointerEvent.ClickCount; custom-host count zero uses the controller's 500 ms / five logical units per axis fallback for one pointer. Programmatic selection methods do not require focus. Clipboard methods require an initialized native host. See [composition example](../text-selection.md#composition-instead-of-inheritance).
+
+## SharedTextSelection and TextSelectionPart
+
+Swealium.Input.SharedTextSelection is sealed and obtained through InputManager.TextSelection; it has no public constructor. One instance is owned by each InputManager/window. Ranges returns an immutable snapshot of TextSelectionPart(Text Widget, Swealium.Graphics.TextSelection Range) records, including zero-length boundary fragments. SelectedText joins fragments with LF in depth-first insertion order. Changed is an Action event raised after shared changes. Clear() removes highlights and anchors; SelectAll() selects every eligible selectable Text in that input tree; Copy() writes the combined string through Clipboard if nonempty. Querying Ranges/SelectedText validates fragment eligibility and model bounds.
+
+Each Text.Selection is its local range. Attached Text.SelectedText/Copy expose the global range; TextEditor.SelectedText remains local. Selection through Text.Select, pointer gestures, or keyboard navigation claims shared ownership and removes competing highlights. Editable controls keep their own editing models and do not join the read-only document. Root replacement, selected-fragment removal/hiding/disabling, or model changes invalidate the range. Each window is independent. Operations follow the input tree's UI-thread convention; Copy requires an active native host. See [shared selection behavior](../text-selection.md#one-shared-selection-per-window).

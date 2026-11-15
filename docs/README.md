@@ -27,6 +27,7 @@ Documentation for **0.1.0-alpha.1 / .NET 10**. This describes the implemented AP
 | [Drawing](drawing.md) | Logical units, frame-scoped context, shapes, text, radii, DPI |
 | [Images and vectors](images-and-vectors.md) | Raster formats, Bitmap, offscreen drawing, SVG/SVGZ, paths, scaling, ownership |
 | [Cursors](cursors.md) | System types, inheritance/capture, window defaults, hidden and custom bitmap cursors |
+| [Selection and custom editors](text-selection.md) | Repeated clicks, selectable read-only text, placeholder color, composition without TextBox inheritance |
 | [Text and editing](text.md) | Shaping, bidi, HTML text markup, Text/TextBox, selection, clipboard, IME preedit/candidates |
 | [Widget hub](widgets/README.md) | Every public widget, inherited contracts, examples, strokes, and scrollbars |
 | [Scrolling](widgets/scroll-container.md) | Directions, viewport/extent, nested input, custom or hidden scrollbars |

@@ -1,4 +1,6 @@
 using SkiaSharp;
+using System.Globalization;
+using System.Text;
 using Kit = Topten.RichTextKit;
 namespace Swealium.Graphics;
 
@@ -75,6 +77,38 @@ public sealed class TextLayout : IDisposable
         var hit = block.HitTest(point.X, point.Y);
         return new(FromCodePoint(hit.ClosestCodePointIndex), hit.AltCaretPosition);
     }
+    /// <summary>UTF-16 index of the grapheme under the point, rather than its nearest insertion edge.</summary>
+    public int HitTestCharacter(Point point)
+    {
+        Verify();var hit=block.HitTest(point.X,point.Y);
+        return FromCodePoint(hit.OverCodePointIndex>=0?hit.OverCodePointIndex:hit.ClosestCodePointIndex);
+    }
+    public TextSelection GetWordRange(int index)
+    {
+        Verify();ValidateIndex(index);if(PlainText.Length==0)return default;
+        var boundaries=StringInfo.ParseCombiningCharacters(PlainText).Append(PlainText.Length).ToArray();
+        int at=Array.BinarySearch(boundaries,index);at=at>=0?Math.Min(at,boundaries.Length-2):Math.Max(0,~at-1);
+        int kind=Category(boundaries[at]);int first=at,last=at+1;
+        if(kind!=2)
+        {
+            while(first>0&&Category(boundaries[first-1])==kind)first--;
+            while(last<boundaries.Length-1&&Category(boundaries[last])==kind)last++;
+        }
+        return new(boundaries[first],boundaries[last]-boundaries[first]);
+        int Category(int position)
+        {
+            var rune=Rune.TryGetRuneAt(PlainText,position,out var found)?found:Rune.ReplacementChar;
+            if(rune.Value is '\n' or '\r' or 0x2028 or 0x2029)return 2;
+            if(Rune.IsWhiteSpace(rune))return 1;
+            return Rune.GetUnicodeCategory(rune) is UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter or UnicodeCategory.TitlecaseLetter or UnicodeCategory.ModifierLetter or UnicodeCategory.OtherLetter or UnicodeCategory.DecimalDigitNumber or UnicodeCategory.LetterNumber or UnicodeCategory.OtherNumber or UnicodeCategory.NonSpacingMark or UnicodeCategory.SpacingCombiningMark or UnicodeCategory.EnclosingMark?0:2;
+        }
+    }
+    /// <summary>The visual line containing a caret, excluding its line terminator.</summary>
+    public TextSelection GetLineRange(TextPosition position)
+    {
+        Verify();ValidateIndex(position.Index);var start=LineEdge(position,false);var end=LineEdge(position,true);
+        return new(start.Index,Math.Max(0,end.Index-start.Index));
+    }
     public Rect GetCaretRectangle(TextPosition position)
     {
         Verify(); ValidateIndex(position.Index);
@@ -101,7 +135,7 @@ public sealed class TextLayout : IDisposable
         var line = block.Lines[lineIndex];
         int start=FromCodePoint(line.Start),limit=FromCodePoint(line.End);
         int edge=end?limit:start;
-        if (end && edge>start && PlainText[edge-1] is '\n' or '\r' or '\u2028' or '\u2029') edge--;
+        while (end && edge>start && PlainText[edge-1] is '\n' or '\r' or '\u2028' or '\u2029') edge--;
         return new(edge,end&&edge==limit&&lineIndex<block.Lines.Count-1);
     }
     internal void Paint(SKCanvas canvas, Point origin, TextSelection? selection, Color? selectionColor, bool antiAliasing = true)

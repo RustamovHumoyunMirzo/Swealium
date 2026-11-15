@@ -15,7 +15,7 @@ internal static class SdlInput
             case 0x401:
             case 0x402:
                 input.ProcessPointer(new(e.Type == 0x401 ? PointerEventKind.Down : PointerEventKind.Up,
-                    new(e.MouseX, e.MouseY), Button(e.Button), modifiers:PointerModifiers(input),pointerId:mouse));
+                    new(e.MouseX, e.MouseY), Button(e.Button), modifiers:PointerModifiers(input),pointerId:mouse,clickCount:e.Clicks));
                 break;
             case 0x403:
                 float direction = e.WheelDirection == 1 ? -1 : 1;

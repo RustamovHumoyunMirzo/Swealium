@@ -29,8 +29,9 @@ public abstract class InputEvent
     public bool Handled { get; set; }
 }
 public sealed class PointerEvent(PointerEventKind kind, Point position, PointerButton button = PointerButton.None, Point wheelDelta = default, KeyModifiers? modifiers = null,
-    PointerId pointerId=default,float pressure=0,bool? isPrimary=null,bool isEraser=false,float tiltX=0,float tiltY=0) : InputEvent
+    PointerId pointerId=default,float pressure=0,bool? isPrimary=null,bool isEraser=false,float tiltX=0,float tiltY=0,int clickCount=0) : InputEvent
 {
+    public int ClickCount {get;}=clickCount>=0?clickCount:throw new ArgumentOutOfRangeException(nameof(clickCount));
     public PointerEventKind Kind { get; } = kind;
     public Point WindowPosition { get; } = position;
     public Point Position { get; internal set; } = position;

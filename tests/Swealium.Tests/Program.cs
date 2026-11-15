@@ -82,6 +82,11 @@ Run("semantic tree, clipping, stable IDs, redaction, and accessibility actions",
 Run("accessibility bridge attach/publish/detach, thread checks, and failure cleanup",Swealium.Tests.InteractionBoundaryTests.BridgeLifecycle);
 Run("gradient kinds, spread modes, color compatibility, and bitmap/path integration",Swealium.Tests.GradientTests.Shapes);
 Run("gradient glyphs, backgrounds, selections, strokes, and recorded vectors",Swealium.Tests.GradientTests.TextAndStrokes);
+Run("Unicode word ranges, repeated click selection, wrapped lines, and word dragging",Swealium.Tests.TextSelectionTests.RangesAndClicks);
+Run("selectable read-only HTML text, copy boundaries, alignment, and toggling",Swealium.Tests.TextSelectionTests.SelectableText);
+Run("custom widget text editing, IME, accessibility, and placeholder color",Swealium.Tests.TextSelectionTests.CustomEditingAndPlaceholder);
+Run("shared text selection across widgets, drag directions, ownership, and lifecycle",Swealium.Tests.SharedSelectionTests.DragAndOwnership);
+Run("shared text keyboard navigation, select-all, and native clipboard",Swealium.Tests.SharedSelectionTests.KeyboardAndCopy);
 Console.WriteLine($"{result.Passed} passed; {result.Failed} failed.");
 return result.Failed == 0 ? 0 : 1;
 
