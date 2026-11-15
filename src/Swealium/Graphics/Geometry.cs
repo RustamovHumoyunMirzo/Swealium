@@ -9,6 +9,9 @@ public readonly record struct Rect(float X, float Y, float Width, float Height)
 }
 public readonly record struct Color(byte R, byte G, byte B, byte A = 255)
 {
+    public Gradient? Gradient { get; private init; }
+    public bool IsGradient => Gradient is not null;
+    public static implicit operator Color(Gradient gradient) => new Color(255,255,255) { Gradient = gradient ?? throw new ArgumentNullException(nameof(gradient)) };
     public static Color Transparent => new(0, 0, 0, 0);
     public static Color White => new(255, 255, 255);
     public static Color Black => new(0, 0, 0);

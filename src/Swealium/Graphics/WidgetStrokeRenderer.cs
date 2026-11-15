@@ -4,10 +4,11 @@ namespace Swealium.Graphics;
 
 internal static class WidgetStrokeRenderer
 {
-    private readonly record struct Sample(SKPoint Outer,SKPoint Inner,SKColor Color,StrokeStyle Style,float Width);
+    private readonly record struct Sample(SKPoint Outer,SKPoint Inner,SKColor Color,StrokeStyle Style,float Width,Dictionary<Color,float>? Weights=null);
     internal static void Draw(SKCanvas canvas,Widget widget)
     {
         Stroke stroke=widget.Stroke;float w=widget.ActualWidth,h=widget.ActualHeight;
+        bool gradients=stroke.Left.Color.IsGradient||stroke.Top.Color.IsGradient||stroke.Right.Color.IsGradient||stroke.Bottom.Color.IsGradient;
         float l=Width(stroke.Left),t=Width(stroke.Top),r=Width(stroke.Right),b=Width(stroke.Bottom);
         if (w<=0||h<=0||(l==0&&t==0&&r==0&&b==0)) return;
         double horizontal=(double)l+r,vertical=(double)t+b;
@@ -40,7 +41,8 @@ internal static class WidgetStrokeRenderer
                 canvas.ClipRoundRect(inner,SKClipOperation.Difference,SwealiumApplication.AntiAliasing);
             }
             var vertices=new List<SKPoint>();var colors=new List<SKColor>();
-            var dots=new List<(SKPoint Center,float Radius,SKColor Color)>();
+            var dots=new List<(SKPoint Center,float Radius,SKColor Color,Dictionary<Color,float>? Weights)>();
+            var weights=new List<Dictionary<Color,float>>();
             SKRect clip=canvas.LocalClipBounds;
             double phase=0;
             for(int i=1;i<contour.Count;i++)
@@ -71,25 +73,54 @@ internal static class WidgetStrokeRenderer
                     for(double at=Math.Ceiling(visibleStart/2)*2;at<visibleEnd;)
                     {
                         Sample dot=Mix(a,z,(float)((at-phase)/(end-phase)));
-                        if(dot.Width>0&&dot.Color.Alpha>0) dots.Add((Center(dot),dot.Width/2,dot.Color));
+                        if(dot.Width>0&&dot.Color.Alpha>0) dots.Add((Center(dot),dot.Width/2,dot.Color,dot.Weights));
                         double next=at+2;if(next<=at) break;at=next;
                     }
                 }
                 phase=end;
             }
-            using var paint=new SKPaint{Color=SKColors.White,IsAntialias=SwealiumApplication.AntiAliasing};
-            if(vertices.Count>0)
+            if(gradients)
             {
-                using var mesh=SKVertices.CreateCopy(SKVertexMode.Triangles,vertices.ToArray(),colors.ToArray());
-                canvas.DrawVertices(mesh,SKBlendMode.Modulate,paint);
+                int layer=canvas.SaveLayer();
+                try
+                {
+                    foreach(var color in weights.SelectMany(map=>map.Keys).Concat(dots.SelectMany(dot=>dot.Weights!.Keys)).Distinct())
+                    {
+                        using var paint=GradientPaint.Create(color,new(0,0,w,h),SwealiumApplication.AntiAliasing);paint.BlendMode=SKBlendMode.Plus;
+                        if(vertices.Count>0)
+                        {
+                            var coverage=weights.Select(map=>SKColors.White.WithAlpha((byte)Math.Clamp(MathF.Round(map.GetValueOrDefault(color)*255),0,255))).ToArray();
+                            using var mesh=SKVertices.CreateCopy(SKVertexMode.Triangles,vertices.ToArray(),vertices.ToArray(),coverage);
+                            canvas.DrawVertices(mesh,SKBlendMode.Modulate,paint);
+                        }
+                        foreach(var dot in dots)
+                        {
+                            float weight=dot.Weights!.GetValueOrDefault(color);
+                            if(weight<=0)continue;
+                            paint.Color=paint.Color.WithAlpha((byte)MathF.Round(color.A*weight));
+                            canvas.DrawCircle(dot.Center,dot.Radius,paint);
+                        }
+                    }
+                }
+                finally {canvas.RestoreToCount(layer);}
             }
-            foreach(var dot in dots) {paint.Color=dot.Color;canvas.DrawCircle(dot.Center,dot.Radius,paint);}
+            else
+            {
+                using var paint=new SKPaint{Color=SKColors.White,IsAntialias=SwealiumApplication.AntiAliasing};
+                if(vertices.Count>0)
+                {
+                    using var mesh=SKVertices.CreateCopy(SKVertexMode.Triangles,vertices.ToArray(),colors.ToArray());
+                    canvas.DrawVertices(mesh,SKBlendMode.Modulate,paint);
+                }
+                foreach(var dot in dots) {paint.Color=dot.Color;canvas.DrawCircle(dot.Center,dot.Radius,paint);}
+            }
 
             void Band(Sample a,Sample z,float start,float end)
             {
                 if (a.Color.Alpha==0&&z.Color.Alpha==0) return;
                 SKPoint a0=Point(a.Outer,a.Inner,start),a1=Point(a.Outer,a.Inner,end),z0=Point(z.Outer,z.Inner,start),z1=Point(z.Outer,z.Inner,end);
                 vertices.AddRange([a0,z0,z1,a0,z1,a1]);colors.AddRange([a.Color,z.Color,z.Color,a.Color,z.Color,a.Color]);
+                if(gradients)weights.AddRange([a.Weights!,z.Weights!,z.Weights!,a.Weights!,z.Weights!,a.Weights!]);
             }
         }
         finally {canvas.RestoreToCount(saved);}
@@ -105,7 +136,7 @@ internal static class WidgetStrokeRenderer
                 float c=MathF.Cos(angle),s=MathF.Sin(angle),blend=fraction*fraction*(3-2*fraction);
                 contour.Add(new(new(outerCenter.X+outerRadius*c,outerCenter.Y+outerRadius*s),
                     new(innerCenter.X+innerRadius.X*c,innerCenter.Y+innerRadius.Y*s),
-                    Color(before.Color,after.Color,blend),fraction<.5f?before.Style:after.Style,beforeWidth+(afterWidth-beforeWidth)*blend));
+                    Color(before.Color,after.Color,blend),fraction<.5f?before.Style:after.Style,beforeWidth+(afterWidth-beforeWidth)*blend,gradients?BlendWeights(new(){{before.Color,1}},new(){{after.Color,1}},blend):null));
             }
         }
     }
@@ -128,7 +159,14 @@ internal static class WidgetStrokeRenderer
         }
     }
     private static SKColor Color(Color a,Color z,float t)=>new(Channel(a.R,z.R,t),Channel(a.G,z.G,t),Channel(a.B,z.B,t),Channel(a.A,z.A,t));
+    private static Dictionary<Color,float> BlendWeights(Dictionary<Color,float> a,Dictionary<Color,float> z,float t)
+    {
+        var result=new Dictionary<Color,float>();
+        foreach(var pair in a)result[pair.Key]=pair.Value*(1-t);
+        foreach(var pair in z)result[pair.Key]=result.GetValueOrDefault(pair.Key)+pair.Value*t;
+        return result;
+    }
     private static byte Channel(byte a,byte z,float t)=>(byte)Math.Clamp((int)MathF.Round(a+(z-a)*t),0,255);
     private static Sample Mix(Sample a,Sample z,float t)=>new(Point(a.Outer,z.Outer,t),Point(a.Inner,z.Inner,t),
-        new(Channel(a.Color.Red,z.Color.Red,t),Channel(a.Color.Green,z.Color.Green,t),Channel(a.Color.Blue,z.Color.Blue,t),Channel(a.Color.Alpha,z.Color.Alpha,t)),a.Style,a.Width+(z.Width-a.Width)*t);
+        new(Channel(a.Color.Red,z.Color.Red,t),Channel(a.Color.Green,z.Color.Green,t),Channel(a.Color.Blue,z.Color.Blue,t),Channel(a.Color.Alpha,z.Color.Alpha,t)),a.Style,a.Width+(z.Width-a.Width)*t,a.Weights is null?null:BlendWeights(a.Weights,z.Weights!,t));
 }

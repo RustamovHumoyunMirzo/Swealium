@@ -80,6 +80,8 @@ Run("SDL touch routing, normalized positions, pen metadata, and emulation filter
 Run("simultaneous scrollbar drags and single-owner text selection",Swealium.Tests.InteractionBoundaryTests.MultipleControlDrags);
 Run("semantic tree, clipping, stable IDs, redaction, and accessibility actions",Swealium.Tests.InteractionBoundaryTests.AccessibilityTree);
 Run("accessibility bridge attach/publish/detach, thread checks, and failure cleanup",Swealium.Tests.InteractionBoundaryTests.BridgeLifecycle);
+Run("gradient kinds, spread modes, color compatibility, and bitmap/path integration",Swealium.Tests.GradientTests.Shapes);
+Run("gradient glyphs, backgrounds, selections, strokes, and recorded vectors",Swealium.Tests.GradientTests.TextAndStrokes);
 Console.WriteLine($"{result.Passed} passed; {result.Failed} failed.");
 return result.Failed == 0 ? 0 : 1;
 

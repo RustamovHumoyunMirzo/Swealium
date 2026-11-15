@@ -25,7 +25,7 @@ public sealed partial class Bitmap:IDisposable
         this.width=width;this.height=height;
         pixels=new(new SKImageInfo(width,height,SKColorType.Rgba8888,SKAlphaType.Premul));
         if(pixels.GetPixels()==0){pixels.Dispose();pixels=null;throw new InvalidOperationException("Could not allocate bitmap pixels.");}
-        pixels.Erase(TextLayout.Native(background));
+        try{Clear(background);}catch{pixels.Dispose();pixels=null;throw;}
     }
     private Bitmap(SKBitmap pixels) {this.pixels=pixels;width=pixels.Width;height=pixels.Height;}
     public int Width { get {Verify();return width;} }
@@ -37,7 +37,7 @@ public sealed partial class Bitmap:IDisposable
     private void Invalidate(){snapshot?.Dispose();snapshot=null;pixels?.NotifyPixelsChanged();}
     public Color GetPixel(int x,int y)
     {ValidatePixel(x,y);var c=pixels!.GetPixel(x,y);return new(c.Red,c.Green,c.Blue,c.Alpha);}
-    public void SetPixel(int x,int y,Color color) {ValidatePixel(x,y);pixels!.SetPixel(x,y,TextLayout.Native(color));Invalidate();}
+    public void SetPixel(int x,int y,Color color) {ValidatePixel(x,y);if(color.IsGradient){using var canvas=new SKCanvas(pixels!);using var paint=GradientPaint.Create(color,new(0,0,width,height),false);paint.BlendMode=SKBlendMode.Src;canvas.DrawRect(SKRect.Create(x,y,1,1),paint);canvas.Flush();}else pixels!.SetPixel(x,y,TextLayout.Native(color));Invalidate();}
     private void ValidatePixel(int x,int y) {Verify();if(x<0||y<0||x>=width||y>=height)throw new ArgumentOutOfRangeException(nameof(x));}
     public void Draw(Action<DrawingContext> draw)
     {

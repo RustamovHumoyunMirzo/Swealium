@@ -13,7 +13,7 @@ Bitmap, VectorImage, VectorPath, image scaling/interpolation, and their DrawingC
 | Point(float X, float Y) | init X/Y | Logical 2D position; no constructor validation |
 | Size(float Width, float Height) | init Width/Height | Logical extent/constraint; no constructor validation |
 | Rect(float X, float Y, float Width, float Height) | init components; Contains(Point) | Axis-aligned logical rectangle |
-| Color(byte R, byte G, byte B, byte A = 255) | init components; static Transparent/White/Black | Byte RGBA color |
+| Color(byte R, byte G, byte B, byte A = 255) | init components; static Transparent/White/Black | Solid RGBA color or implicit Gradient carrier |
 
 Rect.Contains returns false for nonpositive extent, includes left/top, and excludes right/bottom. Layout accepts only meaningful validated Size values even though the raw record can represent negatives/NaN/infinity.
 
@@ -80,3 +80,5 @@ The supplied implementation throws ObjectDisposedException when used after its c
 ## Anti-aliasing
 
 DrawingContext exposes virtual bool `AntiAliasing { get; set; }`. New contexts initialize it from SwealiumApplication.AntiAliasing. The Swealium implementation validates frame lifetime for both accessors. Overrides affect subsequent operations within that context only; image interpolation and previously recorded vector paints remain independent. See [rendering settings](../rendering.md).
+
+Color supports immutable gradient descriptions through implicit conversion. See [gradient contracts](gradients.md) for Color.Gradient/IsGradient, geometry, validation, and alpha behavior.

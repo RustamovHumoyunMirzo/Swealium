@@ -34,6 +34,7 @@ dotnet pack src/Swealium -c Release -o artifacts
 - [System and custom bitmap cursors](docs/cursors.md)
 - [Input and focus](docs/input.md)
 - [Multiple pointers](docs/multiple-pointers.md) · [Accessibility bridge boundary](docs/accessibility.md)
+- [Gradients in existing Color properties](docs/gradients.md)
 - [Drawing and custom widgets](docs/custom-widgets.md)
 - [Multiple windows and controls](docs/windows.md)
 - [Dialogs and native message boxes](docs/dialogs.md)

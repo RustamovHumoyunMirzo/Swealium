@@ -23,6 +23,7 @@ Documentation for **0.1.0-alpha.1 / .NET 10**. This describes the implemented AP
 | [Multiple pointers](multiple-pointers.md) | Mouse/touch/pen identity, per-contact capture/hover, pressure/tilt, native routing |
 | [Accessibility boundary](accessibility.md) | Semantic snapshots, actions, notifications, owned adapter lifecycle; native providers remain separate |
 | [Rendering settings](rendering.md) | Application/context anti-aliasing, GPU selection, diagnostics, software fallback |
+| [Gradients](gradients.md) | Seven geometries, stops, repeat/mirror/decal, existing Color properties |
 | [Drawing](drawing.md) | Logical units, frame-scoped context, shapes, text, radii, DPI |
 | [Images and vectors](images-and-vectors.md) | Raster formats, Bitmap, offscreen drawing, SVG/SVGZ, paths, scaling, ownership |
 | [Cursors](cursors.md) | System types, inheritance/capture, window defaults, hidden and custom bitmap cursors |
@@ -45,13 +46,10 @@ The curated contract pages explain defaults, parameters, results, exceptions, th
 - [Grid contracts](api/grid.md)
 - [Graphics and value-type contracts](api/graphics.md)
 - [Bitmap/vector/path contracts](api/media.md)
+- [Gradient contracts](api/gradients.md)
 - [Text, editing, composition, and clipboard contracts](api/text.md)
 - [Input contracts and enums](api/input.md)
 - [Accessibility contracts](api/accessibility.md)
 - [Complete public/protected signatures](api/reference.md)
 
 Inherited widget members are documented once on Widget. WidgetCollection also inherits the standard Collection<Widget> operations. Record-generated equality, formatting, and positional deconstruction are included in the signature inventory.
-
-## Current boundaries
-
-Desktop windowing, stack/grid/wrap/scroll layout, shaped text/editing, media/cursors, multi-window dialogs, and independent mouse/touch/pen routing are implemented. Widget opacity applies to complete subtrees. Accessibility provides semantic trees/actions and a bridge boundary; native UIA/AX/AT-SPI/mobile providers are **not implemented**. Windows x64 has local runtime verification; Linux/macOS CI requires target runtime verification for changes. Physical touch/pen and interactive IMEs need device/provider testing. GPU-backed Skia uses SDL OpenGL/OpenGL ES, with raster fallback. iOS/Android native lifecycle hosts are **not implemented**.

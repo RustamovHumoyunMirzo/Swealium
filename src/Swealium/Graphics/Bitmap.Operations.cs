@@ -25,7 +25,7 @@ public sealed partial class Bitmap
     public string ToBase64(BitmapFormat format=BitmapFormat.Png,int quality=90)=>Convert.ToBase64String(Encode(format,quality));
     public string ToDataUri(BitmapFormat format=BitmapFormat.Png,int quality=90)
     {string encoded=ToBase64(format,quality);return $"data:image/{(format==BitmapFormat.Jpeg?"jpeg":format==BitmapFormat.WebP?"webp":"png")};base64,{encoded}";}
-    public void Clear(Color color=default){Verify();pixels!.Erase(TextLayout.Native(color));Invalidate();}
+    public void Clear(Color color=default){Verify();using var canvas=new SKCanvas(pixels!);GradientPaint.Clear(canvas,color,new(0,0,width,height));canvas.Flush();Invalidate();}
     public Bitmap Resize(int width,int height,BitmapInterpolation interpolation=BitmapInterpolation.Linear)
     {
         Verify();if(!Enum.IsDefined(interpolation))throw new ArgumentOutOfRangeException(nameof(interpolation));var result=new Bitmap(width,height);

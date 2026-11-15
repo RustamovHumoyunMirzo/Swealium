@@ -4,6 +4,33 @@ using Swealium.Input;
 using Swealium.UI;
 
 bool smokeTest = args.Contains("--smoke-test");
+if(args.Contains("--gradient-demo"))
+{
+    Color purple=new(145,80,235),teal=new(25,205,185),gold=new(255,190,65);
+    GradientStop[] stops=[new(0,purple),new(.55f,teal),new(1,gold)];
+    Gradient[] choices=[Gradient.Horizontal(purple,teal,gold),Gradient.Radial(new(.5f,.5f),.5f,stops),
+        Gradient.Elliptical(new(.5f,.5f),new(.5f,.3f),stops),Gradient.Sweep(new(.5f,.5f),stops),
+        Gradient.TwoPointConical(new(.2f,.4f),.03f,new(.6f,.5f),.6f,stops),
+        Gradient.Diamond(new(.5f,.5f),new(.5f,.5f),stops),Gradient.Square(new(.5f,.5f),new(.5f,.5f),stops)];
+    SwealiumApplication.Run(new(){Title="Swealium - gradients",Width=1000,Height=760,Background=Gradient.Vertical(new(15,20,35),new(35,20,50))},window=>
+    {
+        var root=new Container{Padding=new(24),Gap=16};
+        root.Children.Add(new Text{Content="One Color property. Seven gradient kinds.",Style=new(){FontSize=30,Foreground=Gradient.Horizontal(teal,gold)}});
+        var scroll=new ScrollContainer{Weight=1,WeightBasis=WeightBasis.Zero};
+        var cards=new WrapContainer{Gap=16,LineGap=16};scroll.Children.Add(cards);root.Children.Add(scroll);
+        foreach(var gradient in choices)
+        {
+            var card=new Container{Width=285,Height=170,Padding=new(16),Gap=10,Radii=new(20),Background=gradient,Stroke=new(3,Gradient.Vertical(Color.White,purple))};
+            card.Children.Add(new Text{Content=gradient.Kind.ToString(),Style=new(){FontSize=22,Foreground=Color.White}});
+            card.Children.Add(new Text{Content="Relative bounds, shared immutable stops",Style=new(){Foreground=Color.White}});
+            cards.Children.Add(card);
+        }
+        root.Children.Add(new TextBox{Text="Select this text to see a gradient highlight",Height=54,SelectionColor=Gradient.Horizontal(purple,teal),Background=Gradient.Horizontal(Color.White,new(210,235,255))});
+        window.Content=root;
+        if(smokeTest){int frames=0;window.Paint+=(_,_)=>{if(++frames==3)window.RequestClose();};}
+    });
+    return;
+}
 if(args.Contains("--media-demo"))
 {
     using var pixels=Bitmap.Load(Path.Combine(AppContext.BaseDirectory,"cat.png"));

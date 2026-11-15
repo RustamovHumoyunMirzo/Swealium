@@ -2,6 +2,7 @@
 from pathlib import Path
 from html import escape
 import sys
+import math
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "docs" / "images"
@@ -222,6 +223,35 @@ body += text(40,355,"Actions: invoke, focus, edit, select, scroll",22)
 body += text(40,485,"Swealium provides the host and adapter contract.",22)
 body += text(40,530,"Applications supply UIA / AX / AT-SPI / mobile providers.",20)
 figures["accessibility-boundary.svg"] = frame("Accessibility provider boundary", "Widget metadata becomes semantic snapshots through AccessibilityHost. Applications implement the bridge to native accessibility services, and marshal actions back onto the UI thread. Native providers are not bundled.",body)
+
+body = '<defs><linearGradient id="gradient-linear"><stop stop-color="#9150eb"/><stop offset=".55" stop-color="#19cdb9"/><stop offset="1" stop-color="#ffbe41"/></linearGradient><radialGradient id="gradient-radial"><stop stop-color="#9150eb"/><stop offset=".55" stop-color="#19cdb9"/><stop offset="1" stop-color="#ffbe41"/></radialGradient><radialGradient id="gradient-focal" fx=".2" fy=".4"><stop stop-color="#9150eb"/><stop offset=".55" stop-color="#19cdb9"/><stop offset="1" stop-color="#ffbe41"/></radialGradient></defs>'
+def ramp_color(t):
+    a,b,u = ((145,80,235),(25,205,185),t/.55) if t<.55 else ((25,205,185),(255,190,65),(t-.55)/.45)
+    return '#'+''.join(f'{round(x+(y-x)*u):02x}' for x,y in zip(a,b))
+for index,label in enumerate(["Linear", "Radial", "Elliptical", "Sweep", "TwoPointConical", "Diamond", "Square"]):
+    x=40+(index%3)*330;y=100+(index//3)*175
+    body += text(x,y,label,22,weight="600")
+    body += f'<defs><clipPath id="gradient-panel-{index}"><rect x="{x}" y="{y+15}" width="280" height="115" rx="12"/></clipPath></defs>'
+    body += f'<g clip-path="url(#gradient-panel-{index})">'
+    if label in ["Linear","Elliptical","TwoPointConical"]:
+        fill={"Linear":"linear","Elliptical":"radial","TwoPointConical":"focal"}[label]
+        body += f'<rect x="{x}" y="{y+15}" width="280" height="115" fill="url(#gradient-{fill})"/>'
+    elif label=="Radial":
+        body += f'<rect x="{x}" y="{y+15}" width="280" height="115" fill="#ffbe41"/><circle cx="{x+140}" cy="{y+72}" r="90" fill="url(#gradient-radial)"/>'
+    elif label=="Sweep":
+        for i in range(120):
+            a=i*math.tau/120;b=(i+1)*math.tau/120;cx=x+140;cy=y+72
+            body += f'<path d="M{cx} {cy} L{cx+220*math.cos(a):.2f} {cy+220*math.sin(a):.2f} L{cx+220*math.cos(b):.2f} {cy+220*math.sin(b):.2f} Z" fill="{ramp_color(i/119)}"/>'
+    else:
+        body += f'<rect x="{x}" y="{y+15}" width="280" height="115" fill="#ffbe41"/>'
+        for i in range(100,0,-1):
+            r=i*1.5;cx=x+140;cy=y+72;color=ramp_color(i/100)
+            if label=="Diamond":body += f'<path d="M{cx-r} {cy} L{cx} {cy-r} L{cx+r} {cy} L{cx} {cy+r} Z" fill="{color}"/>'
+            else:body += f'<rect x="{cx-r}" y="{cy-r}" width="{2*r}" height="{2*r}" fill="{color}"/>'
+    body += '</g>'
+body += text(40,660,"Reuse stops. Change the geometry. Assign directly to Color properties.",21)
+body += text(40,698,"Pad extends endpoints; Repeat restarts; Reflect reverses; Decal becomes transparent.",18)
+figures["gradient-kinds.svg"] = frame("Seven gradient geometries", "Illustrative swatches show linear, circular radial, elliptical radial, angular sweep, offset two-circle conical, diamond Manhattan-distance, and square maximum-distance gradients. Every kind supports explicit stops and spread modes.",body,height=735)
 
 OUT.mkdir(parents=True, exist_ok=True)
 for name, value in figures.items():

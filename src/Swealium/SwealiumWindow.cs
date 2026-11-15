@@ -242,11 +242,12 @@ public partial class SwealiumWindow : IDisposable
             if (frame is null || ClientSize.Width <= 0 || ClientSize.Height <= 0) return;
             var canvas = frame.Canvas;
             var background = Background;
-            canvas.Clear(new SKColor(background.R, background.G, background.B, background.A));
+            canvas.Clear(SKColors.Transparent);
             int saved = canvas.Save();
             try
             {
                 canvas.Scale(width / ClientSize.Width, height / ClientSize.Height);
+                GradientPaint.Clear(canvas,background,new(0,0,ClientSize.Width,ClientSize.Height));
                 var context = new SkiaDrawingContext(canvas);
                 try { OnPaint(context, ClientSize); }
                 finally { context.End(); }

@@ -95,6 +95,7 @@ internal static class RenderingOptionsTests
                     try{context.FillRectangle(new(0,0,32,16),new(255,0,0));}finally{context.End();}
                     using var image=surface.Snapshot();using var raster=SKBitmap.FromImage(image);
                     Check(raster.GetPixel(8,4).Red>240&&raster.GetPixel(8,24).Blue>240,"GPU pixels and top-left drawing orientation");
+                    GradientTests.Gpu(surface);
                     gpu.Present();
                 }
                 finally { Sdl.SDL_DestroyWindow(native); }

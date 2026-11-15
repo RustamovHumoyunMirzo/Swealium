@@ -6,6 +6,7 @@ namespace Swealium.Graphics;
 public sealed class TextLayout : IDisposable
 {
     private readonly Kit.TextBlock block = new();
+    private readonly Dictionary<Kit.IStyle,TextStyle> sourceStyles = new();
     private readonly int[] codePointOffsets;
     private readonly TextStyle baseStyle;
     private bool disposed;
@@ -106,15 +107,61 @@ public sealed class TextLayout : IDisposable
     internal void Paint(SKCanvas canvas, Point origin, TextSelection? selection, Color? selectionColor, bool antiAliasing = true)
     {
         Verify();
-        var options = new Kit.TextPaintOptions { SelectionHandleScale = 0, Edging = antiAliasing ? SKFontEdging.Antialias : SKFontEdging.Alias, ConfigurePaint = (paint, _, _) => paint.IsAntialias = antiAliasing };
-        if (selection is { } range)
+        if (selection is { } range && (range.Length < 0 || range.Start < 0 || range.Start > PlainText.Length-range.Length))
+            throw new ArgumentOutOfRangeException(nameof(selection));
+        var shaders = new Dictionary<Color,SKShader>();
+        var bounds = new Rect(0,0,Math.Max(block.RenderWidth??Size.Width,.0001f),Math.Max(Size.Height,.0001f));
+        var options = new Kit.TextPaintOptions { SelectionHandleScale=0, Edging=antiAliasing?SKFontEdging.Antialias:SKFontEdging.Alias };
+        SKShader Shader(Color color)
+        {if(!shaders.TryGetValue(color,out var shader))shaders.Add(color,shader=GradientPaint.Shader(color.Gradient!,bounds));return shader;}
+        options.ConfigurePaint=(paint,style,halo)=>
         {
-            if (range.Length < 0 || range.Start < 0 || range.Start > PlainText.Length - range.Length)
-                throw new ArgumentOutOfRangeException(nameof(selection));
-            options.Selection = new Kit.TextRange(ToCodePoint(range.Start), ToCodePoint(range.Start + range.Length));
-            options.SelectionColor = Native(selectionColor ?? new Color(70, 110, 210, 120));
+            paint.IsAntialias=antiAliasing;
+            if(!halo&&sourceStyles.TryGetValue(style,out var source)&&source.Foreground.IsGradient)
+            {paint.Color=SKColors.White.WithAlpha(source.Foreground.A);paint.Shader=Shader(source.Foreground);}
+        };
+        if(selection is {} selected)
+        {
+            options.Selection=new Kit.TextRange(ToCodePoint(selected.Start),ToCodePoint(selected.Start+selected.Length));
+            options.SelectionColor=Native(selectionColor??new Color(70,110,210,120));
         }
-        block.Paint(canvas, new SKPoint(origin.X, origin.Y), options);
+        bool custom=sourceStyles.Values.Any(style=>style.Background.IsGradient)||(selectionColor?.IsGradient==true&&selection is not null);
+        int saved=canvas.Save();
+        try
+        {
+            canvas.Translate(origin.X,origin.Y);
+            if(custom)
+            {
+                var nativeStyles=sourceStyles.Keys.Cast<Kit.Style>().ToArray();
+                try
+                {
+                    foreach(var color in sourceStyles.Values.Select(style=>style.Background).Where(c=>c.A>0).Distinct())
+                    {
+                        foreach(var native in nativeStyles)native.BackgroundColor=sourceStyles[native].Background==color?SKColors.White:SKColors.Transparent;
+                        Mask(color,null);
+                    }
+                    foreach(var native in nativeStyles)native.BackgroundColor=SKColors.Transparent;
+                    if(selection is not null)Mask(selectionColor??new Color(70,110,210,120),options.Selection);
+                    options.Selection=null;
+                    block.Paint(canvas,options);
+                }
+                finally {foreach(var native in nativeStyles)native.BackgroundColor=Native(sourceStyles[native].Background);}
+            }
+            else block.Paint(canvas,options);
+        }
+        finally {canvas.RestoreToCount(saved);foreach(var shader in shaders.Values)shader.Dispose();}
+        void Mask(Color color,Kit.TextRange? range)
+        {
+            int layer=canvas.SaveLayer();
+            try
+            {
+                block.Paint(canvas,new Kit.TextPaintOptions { SelectionHandleScale=0,Selection=range,SelectionColor=SKColors.White,
+                    ConfigurePaint=(paint,_,_)=>{paint.Shader=null;paint.Color=SKColors.Transparent;} });
+                using var paint=GradientPaint.Create(color,bounds,antiAliasing);paint.BlendMode=SKBlendMode.SrcIn;
+                canvas.DrawPaint(paint);
+            }
+            finally {canvas.RestoreToCount(layer);}
+        }
     }
     private void ValidateIndex(int index)
     {
@@ -144,7 +191,9 @@ public sealed class TextLayout : IDisposable
         TextDirection.RightToLeft => Kit.TextDirection.RTL,
         _ => Kit.TextDirection.Auto
     };
-    private static Kit.Style ToNative(TextStyle style) => new()
+    private Kit.Style ToNative(TextStyle style)
+    {
+        var native = new Kit.Style()
     {
         FontFamily = style.FontFamily ?? SKTypeface.Default.FamilyName,
         FontSize = style.FontSize, FontWeight = style.FontWeight, FontItalic = style.Italic,
@@ -153,6 +202,9 @@ public sealed class TextLayout : IDisposable
         StrikeThrough = style.StrikeThrough ? Kit.StrikeThroughStyle.Solid : Kit.StrikeThroughStyle.None,
         LineHeight = style.LineHeight, LetterSpacing = style.LetterSpacing, TextDirection = Direction(style.Direction),
         FontVariant = style.Script switch { TextScript.Subscript => Kit.FontVariant.SubScript, TextScript.Superscript => Kit.FontVariant.SuperScript, _ => Kit.FontVariant.Normal }
-    };
+        };
+        sourceStyles.Add(native,style);
+        return native;
+    }
 }
 

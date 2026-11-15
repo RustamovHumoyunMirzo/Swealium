@@ -9,11 +9,7 @@ internal sealed class SkiaDrawingContext(SKCanvas canvas) : DrawingContext
     internal void End() => active = false;
     private void Verify() => ObjectDisposedException.ThrowIf(!active, this);
     private static SKRect ToRect(Rect r) => SKRect.Create(r.X, r.Y, r.Width, r.Height);
-    private SKPaint Paint(Color c, float thickness = 0) => new()
-    {
-        Color = new SKColor(c.R, c.G, c.B, c.A), IsAntialias = AntiAliasing,
-        Style = thickness > 0 ? SKPaintStyle.Stroke : SKPaintStyle.Fill, StrokeWidth = thickness
-    };
+    private SKPaint Paint(Color color,Rect bounds,float thickness=0)=>GradientPaint.Create(color,bounds,AntiAliasing,thickness);
     internal static SKRoundRect RoundRect(Rect bounds, CornerRadii radii)
     {
         var r = radii.Normalize(new(bounds.Width, bounds.Height));
@@ -26,7 +22,7 @@ internal sealed class SkiaDrawingContext(SKCanvas canvas) : DrawingContext
     public override void FillRectangle(Rect bounds, Color color, CornerRadii radii)
     {
         Verify();
-        using var paint = Paint(color);
+        using var paint = Paint(color, bounds);
         using var rounded = RoundRect(bounds, radii);
         canvas.DrawRoundRect(rounded, paint);
     }
@@ -34,21 +30,21 @@ internal sealed class SkiaDrawingContext(SKCanvas canvas) : DrawingContext
     {
         Verify();
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(thickness);
-        using var paint = Paint(color, thickness);
+        using var paint = Paint(color, bounds, thickness);
         using var rounded = RoundRect(bounds, radii);
         canvas.DrawRoundRect(rounded, paint);
     }
     public override void FillEllipse(Rect bounds, Color color)
     {
         Verify();
-        using var paint = Paint(color);
+        using var paint = Paint(color, bounds);
         canvas.DrawOval(ToRect(bounds), paint);
     }
     public override void DrawLine(Point start, Point end, Color color, float thickness = 1)
     {
         Verify();
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(thickness);
-        using var paint = Paint(color, thickness);
+        using var paint = Paint(color, new(Math.Min(start.X,end.X),Math.Min(start.Y,end.Y),Math.Max(thickness,Math.Abs(end.X-start.X)),Math.Max(thickness,Math.Abs(end.Y-start.Y))), thickness);
         canvas.DrawLine(start.X, start.Y, end.X, end.Y, paint);
     }
     public override void DrawText(string text, Point baseline, Color color, float fontSize = 16)
@@ -93,11 +89,11 @@ internal sealed class SkiaDrawingContext(SKCanvas canvas) : DrawingContext
         finally{canvas.RestoreToCount(saved);}
     }
     public override void FillPath(VectorPath path,Color color)
-    {Verify();ArgumentNullException.ThrowIfNull(path);using var snapshot=path.Snapshot();using var paint=Paint(color);canvas.DrawPath(snapshot,paint);}
+    {Verify();ArgumentNullException.ThrowIfNull(path);using var snapshot=path.Snapshot();using var paint=Paint(color, new(snapshot.Bounds.Left,snapshot.Bounds.Top,snapshot.Bounds.Width,snapshot.Bounds.Height));canvas.DrawPath(snapshot,paint);}
     public override void StrokePath(VectorPath path,Color color,float width=1,PathLineCap cap=PathLineCap.Flat,PathLineJoin join=PathLineJoin.Miter)
     {
         Verify();ArgumentNullException.ThrowIfNull(path);if(!float.IsFinite(width)||width<=0||!Enum.IsDefined(cap)||!Enum.IsDefined(join))throw new ArgumentOutOfRangeException(nameof(width));
-        using var snapshot=path.Snapshot();using var paint=Paint(color,width);
+        using var snapshot=path.Snapshot();using var paint=Paint(color,new(snapshot.Bounds.Left,snapshot.Bounds.Top,snapshot.Bounds.Width,snapshot.Bounds.Height),width);
         paint.StrokeCap=cap switch{PathLineCap.Round=>SKStrokeCap.Round,PathLineCap.Square=>SKStrokeCap.Square,_=>SKStrokeCap.Butt};
         paint.StrokeJoin=join switch{PathLineJoin.Round=>SKStrokeJoin.Round,PathLineJoin.Bevel=>SKStrokeJoin.Bevel,_=>SKStrokeJoin.Miter};canvas.DrawPath(snapshot,paint);
     }
