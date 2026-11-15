@@ -74,7 +74,7 @@ public sealed class TwoColumnPanel : Container
 }
 ```
 
-This example intentionally shares two column slots among any extra children; it is not a general grid control. A production layout should define overflow, hidden children, gaps, and how it treats more than two children.
+This example intentionally shares two column slots among any extra children; it is a custom-layout example, not the built-in Grid. Use [Grid](grid.md) for definitions, spans, constraints, and implicit tracks. A custom layout should define overflow, hidden children, gaps, and how it treats more than two children.
 
 Keep child list changes out of MeasureContent and ArrangeContent themselves. Ownership setters and collection operations already invalidate ancestors. Layout does not automatically detect arbitrary custom state changes.
 

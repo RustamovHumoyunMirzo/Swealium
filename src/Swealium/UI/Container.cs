@@ -31,8 +31,8 @@ public class Container : Widget
         {
             child.Measure(Layout switch
             {
-                LayoutMode.Vertical => new(available.Width, float.PositiveInfinity),
-                LayoutMode.Horizontal => new(float.PositiveInfinity, available.Height),
+                LayoutMode.Vertical => new(available.Width, child.HeightSizing == SizingMode.Fill ? available.Height : float.PositiveInfinity),
+                LayoutMode.Horizontal => new(child.WidthSizing == SizingMode.Fill ? available.Width : float.PositiveInfinity, available.Height),
                 _ => available
             });
             if (!child.IsVisible) continue;
@@ -70,7 +70,10 @@ public class Container : Widget
             return;
         }
         bool vertical = Layout == LayoutMode.Vertical;
-        float[] lengths = children.Select(child => vertical ? child.DesiredSize.Height : child.DesiredSize.Width).ToArray();
+        float[] lengths = children.Select(child =>
+            (vertical ? child.HeightSizing : child.WidthSizing) == SizingMode.Fill
+                ? child.FillOuterLength(vertical ? area.Height : area.Width, vertical)
+                : vertical ? child.DesiredSize.Height : child.DesiredSize.Width).ToArray();
         float gaps = Gap * Math.Max(0, children.Length - 1);
         float free = Math.Max(0, (vertical ? area.Height : area.Width) - lengths.Sum() - gaps);
         // Redistribute unused shares when a growing child reaches its max size.

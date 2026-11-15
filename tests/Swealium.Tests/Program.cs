@@ -38,6 +38,13 @@ Run("native message-box ABI, presets, Unicode, and results", WindowTests.Message
 Run("window controls, live getters, options, and validation", WindowControlTests.Controls);
 Run("window event payloads, focus cleanup, and subclass hooks", WindowControlTests.Events);
 Run("native window handle mapping for all supported systems", InteropTests.HandleMapping);
+Run("explicit content/fill sizing and stack semantics", GridTests.Sizing);
+Run("grid fixed/content/fraction tracks and padding/gaps", GridTests.Tracks);
+Run("grid spanning and implicit tracks", GridTests.Spans);
+Run("grid constrained fractions and extreme weights", GridTests.Constraints);
+Run("grid dependent measurement, nesting, and invalidation", GridTests.Measurement);
+Run("grid collection ownership and invalid arguments", GridTests.OwnershipAndValidation);
+Run("grid cell rendering, hit testing, z order, and resize", GridTests.RenderingAndResize);
 Console.WriteLine($"{result.Passed} passed; {result.Failed} failed.");
 return result.Failed == 0 ? 0 : 1;
 

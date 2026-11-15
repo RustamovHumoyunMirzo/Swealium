@@ -12,6 +12,10 @@ A plain Widget does not expose a traversed child collection. Derive composite vi
 
 X/Y only position children in LayoutMode.Absolute. A default Container stacks vertically. Main-axis content alignment moves the stack as a group; a child's main-axis alignment only acts inside its allocated slot. Stretch applies to automatic dimensions, not explicit sizes. Grow adds spare space rather than enforcing a total-size ratio.
 
+WidthSizing/HeightSizing=Content opts out of Stretch; Fill takes the entire allocated dimension. Assigning a numeric Width/Height afterward resets that axis to Automatic. Multiple main-axis Fill children in a stack can each consume the parent extent; use Grow or fractional grid tracks to share space instead.
+
+Grid placement is explicit; all new children default to cell (0,0). Set GridRow/GridColumn or they overlap. Only Grid uses those properties. GridLength.Content tracks do not automatically divide spare space; Fraction tracks do. A span includes internal gaps. Track minimums or fixed child dimensions can overflow a cell, subject to normal ancestor clipping.
+
 Check margins, padding, min/max constraints, and ancestor clipping. A minimum larger than its maximum wins.
 
 ## Hover/click behaves unexpectedly

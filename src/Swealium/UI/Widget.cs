@@ -11,12 +11,31 @@ public abstract class Widget
     private Alignment? horizontalAlignment, verticalAlignment;
     private bool isVisible = true, layoutDirty = true, arranged;
     private Rect layoutBounds;
+    private bool measureValid;
+    private Size lastMeasureConstraint;
+    private SizingMode widthSizing, heightSizing;
+    private int gridRow, gridColumn, gridRowSpan = 1, gridColumnSpan = 1;
     /// <summary>Offsets used by an Absolute container.</summary>
     public float X { get => x; set { if (!float.IsFinite(value)) throw new ArgumentOutOfRangeException(nameof(value)); x = value; InvalidateLayout(); } }
     public float Y { get => y; set { if (!float.IsFinite(value)) throw new ArgumentOutOfRangeException(nameof(value)); y = value; InvalidateLayout(); } }
     /// <summary>Requested size. NaN means auto/content size.</summary>
-    public float Width { get => width; set { ValidateLength(value, true); width = value; InvalidateLayout(); } }
-    public float Height { get => height; set { ValidateLength(value, true); height = value; InvalidateLayout(); } }
+    public float Width { get => width; set { ValidateLength(value, true); width = value; widthSizing = SizingMode.Automatic; InvalidateLayout(); } }
+    public float Height { get => height; set { ValidateLength(value, true); height = value; heightSizing = SizingMode.Automatic; InvalidateLayout(); } }
+    /// <summary>Content/Fill clear an explicit width. Setting Width returns this axis to Automatic.</summary>
+    public SizingMode WidthSizing
+    {
+        get => widthSizing;
+        set { ValidateSizing(value); widthSizing = value; if (value != SizingMode.Automatic) width = float.NaN; InvalidateLayout(); }
+    }
+    public SizingMode HeightSizing
+    {
+        get => heightSizing;
+        set { ValidateSizing(value); heightSizing = value; if (value != SizingMode.Automatic) height = float.NaN; InvalidateLayout(); }
+    }
+    public int GridRow { get => gridRow; set { ValidateCell(value, false); gridRow = value; InvalidateLayout(); } }
+    public int GridColumn { get => gridColumn; set { ValidateCell(value, false); gridColumn = value; InvalidateLayout(); } }
+    public int GridRowSpan { get => gridRowSpan; set { ValidateCell(value, true); gridRowSpan = value; InvalidateLayout(); } }
+    public int GridColumnSpan { get => gridColumnSpan; set { ValidateCell(value, true); gridColumnSpan = value; InvalidateLayout(); } }
     public float MinWidth { get => minWidth; set { ValidateLength(value); minWidth = value; InvalidateLayout(); } }
     public float MinHeight { get => minHeight; set { ValidateLength(value); minHeight = value; InvalidateLayout(); } }
     public float MaxWidth { get => maxWidth; set { ValidateLength(value, infinity: true); maxWidth = value; InvalidateLayout(); } }
@@ -51,18 +70,24 @@ public abstract class Widget
     public Rect ContentBounds => new(Padding.Left, Padding.Top,
         Math.Max(0, ActualWidth - Padding.Horizontal), Math.Max(0, ActualHeight - Padding.Vertical));
 
-    public void InvalidateLayout() { layoutDirty = true; Parent?.InvalidateLayout(); }
+    public void InvalidateLayout() { layoutDirty = true; measureValid = false; Parent?.InvalidateLayout(); }
     public void Measure(Size available)
     {
         LayoutEngine.ValidateSize(available, true);
-        if (!IsVisible) { DesiredSize = default; return; }
-        float availableWidth = Math.Min(Math.Max(MinWidth, MaxWidth), float.IsNaN(Width) ? Math.Max(0, available.Width - Margin.Horizontal) : Width);
-        float availableHeight = Math.Min(Math.Max(MinHeight, MaxHeight), float.IsNaN(Height) ? Math.Max(0, available.Height - Margin.Vertical) : Height);
+        if (measureValid && lastMeasureConstraint == available) return;
+        measureValid = false;
+        if (!IsVisible) { DesiredSize = default; lastMeasureConstraint = available; measureValid = true; return; }
+        float availableWidth = Constrain(float.IsNaN(Width) ? Math.Max(0, available.Width - Margin.Horizontal) : Width, MinWidth, MaxWidth);
+        float availableHeight = Constrain(float.IsNaN(Height) ? Math.Max(0, available.Height - Margin.Vertical) : Height, MinHeight, MaxHeight);
         Size content = MeasureContent(new(Math.Max(0, availableWidth - Padding.Horizontal), Math.Max(0, availableHeight - Padding.Vertical)));
         LayoutEngine.ValidateSize(content, false);
         DesiredSize = new(
-            Constrain(float.IsNaN(Width) ? content.Width + Padding.Horizontal : Width, MinWidth, MaxWidth) + Margin.Horizontal,
-            Constrain(float.IsNaN(Height) ? content.Height + Padding.Vertical : Height, MinHeight, MaxHeight) + Margin.Vertical);
+            Constrain(WidthSizing == SizingMode.Fill && float.IsFinite(available.Width) ? availableWidth :
+                float.IsNaN(Width) ? content.Width + Padding.Horizontal : Width, MinWidth, MaxWidth) + Margin.Horizontal,
+            Constrain(HeightSizing == SizingMode.Fill && float.IsFinite(available.Height) ? availableHeight :
+                float.IsNaN(Height) ? content.Height + Padding.Vertical : Height, MinHeight, MaxHeight) + Margin.Vertical);
+        lastMeasureConstraint = available;
+        measureValid = true;
     }
     protected virtual Size MeasureContent(Size available) => default;
     protected virtual void ArrangeContent(Rect contentBounds) { }
@@ -75,8 +100,8 @@ public abstract class Widget
         if (!IsVisible) { layoutBounds = new(slot.X, slot.Y, 0, 0); arranged = true; layoutDirty = false; return; }
         float availableWidth = Math.Max(0, slot.Width - Margin.Horizontal), availableHeight = Math.Max(0, slot.Height - Margin.Vertical);
         Alignment horizontal = HorizontalAlignment ?? inheritedHorizontal, vertical = VerticalAlignment ?? inheritedVertical;
-        float actualWidth = Constrain(forceWidth || (float.IsNaN(Width) && horizontal == Alignment.Stretch) ? availableWidth : Math.Max(0, DesiredSize.Width - Margin.Horizontal), MinWidth, MaxWidth);
-        float actualHeight = Constrain(forceHeight || (float.IsNaN(Height) && vertical == Alignment.Stretch) ? availableHeight : Math.Max(0, DesiredSize.Height - Margin.Vertical), MinHeight, MaxHeight);
+        float actualWidth = Constrain(forceWidth || WidthSizing == SizingMode.Fill || (WidthSizing == SizingMode.Automatic && float.IsNaN(Width) && horizontal == Alignment.Stretch) ? availableWidth : Math.Max(0, DesiredSize.Width - Margin.Horizontal), MinWidth, MaxWidth);
+        float actualHeight = Constrain(forceHeight || HeightSizing == SizingMode.Fill || (HeightSizing == SizingMode.Automatic && float.IsNaN(Height) && vertical == Alignment.Stretch) ? availableHeight : Math.Max(0, DesiredSize.Height - Margin.Vertical), MinHeight, MaxHeight);
         layoutBounds = new(slot.X + Margin.Left + LayoutEngine.Offset(availableWidth - actualWidth, horizontal),
             slot.Y + Margin.Top + LayoutEngine.Offset(availableHeight - actualHeight, vertical), actualWidth, actualHeight);
         arranged = true;
@@ -84,6 +109,17 @@ public abstract class Widget
         layoutDirty = false;
     }
     private static float Constrain(float value, float min, float max) => Math.Clamp(value, min, Math.Max(min, max));
+    internal float FillOuterLength(float available, bool vertical) => vertical
+        ? Constrain(Math.Max(0, available - Margin.Vertical), MinHeight, MaxHeight) + Margin.Vertical
+        : Constrain(Math.Max(0, available - Margin.Horizontal), MinWidth, MaxWidth) + Margin.Horizontal;
+    private static void ValidateSizing(SizingMode value)
+    {
+        if (!Enum.IsDefined(value)) throw new ArgumentOutOfRangeException(nameof(value));
+    }
+    private static void ValidateCell(int value, bool span)
+    {
+        if (value < (span ? 1 : 0) || value == int.MaxValue) throw new ArgumentOutOfRangeException(nameof(value));
+    }
     private static void ValidateLength(float value, bool auto = false, bool infinity = false)
     {
         if (auto && float.IsNaN(value)) return;

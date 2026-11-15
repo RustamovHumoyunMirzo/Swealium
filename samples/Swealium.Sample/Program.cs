@@ -31,28 +31,34 @@ SwealiumApplication.Run(new WindowOptions { Title = "Swealium - Layout and round
         Padding = new(20), Gap = 12, Background = new(34, 38, 48), Radii = new(16),
         HorizontalContentAlignment = Alignment.Center
     };
-    stack.Children.Add(new Button { Text = "Auto size, centered" });
+    stack.Children.Add(new Button { Text = "Content size, centered", WidthSizing = SizingMode.Content });
     stack.Children.Add(new Button
     {
         Text = "Child placement: end", HorizontalAlignment = Alignment.End,
         Margin = new(8, 0), Radii = new(4, 20, 4, 20)
     });
 
-    var overlay = new Container
+    var grid = new Grid
     {
-        Layout = LayoutMode.Overlay, Height = 112, Padding = new(20),
+        Height = 160, Padding = new(20), Gap = 8,
         Background = new(34, 38, 48), Radii = new(16)
     };
-    overlay.Children.Add(new Button
+    grid.Columns.Add(new(GridLength.Fixed(140)));
+    grid.Columns.Add(new(GridLength.Fraction()));
+    grid.Columns.Add(new(GridLength.Fraction(2)));
+    grid.Rows.Add(new(GridLength.Content));
+    grid.Rows.Add(new(GridLength.Fraction()));
+    grid.Children.Add(new Button
     {
-        Text = "Front: ZIndex 2", Width = 240, Height = 48, ZIndex = 2,
-        HorizontalAlignment = Alignment.Center, VerticalAlignment = Alignment.Center
+        Text = "Grid — fixed + weighted columns, spanning header",
+        GridColumnSpan = 3, WidthSizing = SizingMode.Fill, HeightSizing = SizingMode.Content
     });
-    overlay.Children.Add(new Button
+    grid.Children.Add(new Button { Text = "140 units", GridRow = 1, WidthSizing = SizingMode.Fill, HeightSizing = SizingMode.Fill });
+    grid.Children.Add(new Button { Text = "1 share", GridRow = 1, GridColumn = 1, WidthSizing = SizingMode.Fill, HeightSizing = SizingMode.Fill });
+    grid.Children.Add(new Button
     {
-        Text = "Behind: ZIndex 1", Width = 240, Height = 48, ZIndex = 1,
-        HorizontalAlignment = Alignment.Center, VerticalAlignment = Alignment.Center,
-        Margin = new(60, 24, 0, 0), Background = new(95, 62, 130)
+        Text = "2 shares", GridRow = 1, GridColumn = 2,
+        WidthSizing = SizingMode.Fill, HeightSizing = SizingMode.Fill, Background = new(95, 62, 130)
     });
     var windows = new Container
     {
@@ -97,7 +103,7 @@ SwealiumApplication.Run(new WindowOptions { Title = "Swealium - Layout and round
     });
     root.Children.Add(row);
     root.Children.Add(stack);
-    root.Children.Add(overlay);
+    root.Children.Add(grid);
     root.Children.Add(windows);
     window.Content = root;
     window.FocusChanged += focused => window.Title = focused ? "Swealium - Active" : "Swealium - Inactive";

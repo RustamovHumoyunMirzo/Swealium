@@ -129,6 +129,19 @@ body += text(555,452,"Drawing, clipping, and input agree.",18)
 body += text(40,548,"Rounded parent clipping also excludes descendant input in the same cut-outs.",18)
 figures["rounded-hit-testing.svg"] = frame("Asymmetric radii and hit regions", "Four independent corner radii define a shared visible and analytic input shape. Red points in removed corners do not activate the widget.",body)
 
+body = box(60,120,904,296,"","#eef1f6","#99a7b6")
+body += text(160,98,"Fixed: 160",19,anchor="middle",weight="600")
+body += text(368,98,"Fraction: 1",19,anchor="middle",weight="600")
+body += text(720,98,"Fraction: 2",19,anchor="middle",weight="600")
+body += box(80,140,864,60,"Content row — Header: GridColumnSpan = 3")
+body += box(80,216,160,180,"Sidebar","#e6f5ef","#4a9784")
+body += box(256,216,688,180,"Body: row 1, column 1, column span 2","#e6f5ef","#4a9784")
+body += '<path d="M480 216 V396" stroke="#6286ba" stroke-dasharray="7 6" stroke-width="2"/>'
+body += text(60,460,"Spans include internal gaps; margins are inside the complete cell slot.",19)
+body += text(60,500,"Track limits constrain sizes. Fraction weights divide the remaining finite budget.",18)
+body += text(60,540,"An undefined axis begins with one fractional track; extra implicit tracks size to content.",17)
+figures["grid-layout.svg"] = frame("Grid tracks and spanning cells", "A content-sized spanning header sits above a fixed sidebar and a body spanning one-share and two-share fractional columns. Padding and gaps surround the track slots.",body)
+
 OUT.mkdir(parents=True, exist_ok=True)
 for name, value in figures.items():
     target = OUT / name

@@ -25,6 +25,7 @@ foreach (Type type in types)
     string contract = type.Namespace switch
     {
         "Swealium.Graphics" => "graphics.md",
+        "Swealium.UI" when type.Name.StartsWith("Grid", StringComparison.Ordinal) => "grid.md",
         "Swealium.UI" => "widgets.md",
         "Swealium.Input" => "input.md",
         _ when type.Name.StartsWith("MessageBox", StringComparison.Ordinal) || type == typeof(DialogResult) => "dialogs.md",

@@ -27,6 +27,7 @@ dotnet pack src/Swealium -c Release -o artifacts
 **[Full documentation](docs/README.md)** · [Getting started](docs/getting-started.md) · [API contracts](docs/api/windowing.md) · [Complete API signatures](docs/api/reference.md)
 
 - [Layout and rounded corners](docs/layout.md)
+- [Grid rows, columns, and spans](docs/grid.md)
 - [Input and focus](docs/input.md)
 - [Drawing and custom widgets](docs/custom-widgets.md)
 - [Multiple windows and controls](docs/windows.md)

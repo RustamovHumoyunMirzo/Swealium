@@ -5,6 +5,26 @@ using Swealium.UI;
 // Compile representative public documentation examples with every solution build.
 internal static class DocumentationExamples
 {
+    internal static Grid GridLayout()
+    {
+        var grid = new Grid { Padding = new(20), RowGap = 12, ColumnGap = 16 };
+        grid.Columns.Add(new(GridLength.Fixed(160)));
+        grid.Columns.Add(new(GridLength.Fraction()));
+        grid.Columns.Add(new(GridLength.Fraction(2)));
+        grid.Rows.Add(new(GridLength.Content));
+        grid.Rows.Add(new(GridLength.Fraction()));
+        grid.Children.Add(new Button
+        {
+            Text = "Header", GridColumnSpan = 3,
+            WidthSizing = SizingMode.Fill, HeightSizing = SizingMode.Content
+        });
+        grid.Children.Add(new Button
+        {
+            Text = "Main pane", GridRow = 1, GridColumn = 1, GridColumnSpan = 2,
+            WidthSizing = SizingMode.Fill, HeightSizing = SizingMode.Fill
+        });
+        return grid;
+    }
     internal static void FirstApplication() => SwealiumApplication.Run(new WindowOptions
     {
         Title = "My application", Width = 800, Height = 500

@@ -14,6 +14,7 @@ Abstract retained visual. The protected default constructor creates no native re
 | --- | --- | --- |
 | X, Y | 0 | Finite offsets used in Absolute containers only |
 | Width, Height | NaN | Auto/content size; otherwise finite nonnegative request |
+| WidthSizing, HeightSizing | SizingMode.Automatic | Content keeps intrinsic size; Fill occupies allocated slot; either clears numeric axis request |
 | MinWidth, MinHeight | 0 | Finite nonnegative lower bound |
 | MaxWidth, MaxHeight | positive infinity | Nonnegative bound; infinity allowed; min wins if contradictory |
 | Margin | zero Thickness | Outer spacing, included in DesiredSize |
@@ -23,8 +24,12 @@ Abstract retained visual. The protected default constructor creates no native re
 | ZIndex | 0 | Signed sibling rendering/hit priority; does not change flow/traversal |
 | Radii | zero CornerRadii | Rounded drawing clip/default hit region |
 | ClipToBounds | true | Clip widget subtree drawing/input to its rounded boundary |
+| GridRow, GridColumn | 0 | Nonnegative zero-based cell in a parent Grid |
+| GridRowSpan, GridColumnSpan | 1 | Positive cell span in a parent Grid |
 
 Layout-affecting setters invalidate ancestor layout. ZIndex/Radii/ClipToBounds affect traversal/geometry immediately rather than desired size.
+
+Setting a numeric Width/Height (including NaN) returns that axis to SizingMode.Automatic. Setting Content/Fill clears the axis request to NaN. Named sizing changes and grid placement/span changes invalidate ancestor layout. Placement is ignored by non-Grid containers. Indices/spans reject negative/zero values as appropriate and int.MaxValue.
 
 ### Eligibility and observed state
 
@@ -53,7 +58,11 @@ Bounds is the arranged parent-relative rectangle. Before first arrangement it fa
 
 MeasureContent(Size available) is protected virtual, returns content size excluding margin/padding, default zero. It must return finite nonnegative dimensions. ArrangeContent(Rect contentBounds) is protected virtual and defaults to no action. A derived Container can use these to measure/arrange Children.
 
+Measure caches the last result for identical constraints until InvalidateLayout. Intrinsic property changes in custom widgets must invalidate measurement; callbacks are not guaranteed on every pass.
+
 Arrange consumes Margin, resolves alignment, applies constraints, sets actual geometry, and invokes ArrangeContent. Root viewport allocation and Grow can force a dimension beyond a requested size. Invalid sizes throw ArgumentOutOfRangeException. Per-axis max constraints are treated as at least the corresponding minimum.
+
+Content suppresses automatic stretching. Fill measures to finite available size and fills its arranged slot; under infinite measurement it falls back to intrinsic size. In stacks, a main-axis Fill slot uses the entire padded parent extent, not a share of spare space. Explicit root/Grow allocation can override Content. See [SizingMode](#sizingmode).
 
 ### Activation, events, and hooks
 
@@ -127,4 +136,12 @@ LayoutMode values: Vertical, Horizontal, Overlay, Absolute. [Layout guide](../la
 Static Layout(Widget root, Size viewport) validates a non-null unparented root and finite nonnegative viewport, then runs measurement and viewport arrangement. It reuses a valid layout when viewport is unchanged. Zero viewport dimensions are valid; child overflow/constraints may still exist but clipping can exclude them.
 
 A window calls this automatically. Standalone trees must provide a viewport. Mutation of custom measurement data requires InvalidateLayout. Custom layout code may call Measure/Arrange directly but is responsible for ordering, hidden children, and consistent slots.
+
+## SizingMode
+
+Automatic, Content, Fill. These are per-axis Widget sizing policies, not track lengths or positional alignment. Content measures intrinsic dimensions; Fill occupies available/allocated dimensions within limits; Automatic preserves numeric/NaN-plus-alignment behavior. The last Width/WidthSizing or Height/HeightSizing assignment wins.
+
+## Grid types
+
+Grid, GridLength, GridUnit, GridTrack, and GridTrackCollection are documented in the [Grid API reference](grid.md).
 
