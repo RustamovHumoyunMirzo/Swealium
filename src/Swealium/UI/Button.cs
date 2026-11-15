@@ -4,11 +4,12 @@ namespace Swealium.UI;
 
 public class Button : Widget
 {
-    private bool pointerPressed;
+    private readonly HashSet<PointerId> pressedPointers=[];
+    private readonly HashSet<PointerId> insidePointers=[];
     private Key activationKey;
     private string text = "Button";
     private float fontSize = 16;
-    public Button() { IsFocusable = true; Padding = new Thickness(16, 12); Radii = new CornerRadii(6); FocusStroke=new(2,Color.White); }
+    public Button() { IsFocusable = true; Padding = new Thickness(16, 12); Radii = new CornerRadii(6); FocusStroke=new(2,Color.White); Cursor=Swealium.Input.Cursor.Pointer; }
     public string Text { get => text; set { ArgumentNullException.ThrowIfNull(value); text = value; InvalidateLayout(); } }
     public Color Background { get; set; } = new(52, 89, 160);
     public Color HoverBackground { get; set; } = new(65, 111, 193);
@@ -19,7 +20,7 @@ public class Button : Widget
         get => fontSize;
         set { if (!float.IsFinite(value) || value <= 0) throw new ArgumentOutOfRangeException(nameof(value)); fontSize = value; InvalidateLayout(); }
     }
-    public bool IsPressed => IsInteractable && ((pointerPressed && IsPointerOver) || activationKey != Key.Unknown);
+    public bool IsPressed => IsInteractable && (pressedPointers.Any(insidePointers.Contains) || activationKey != Key.Unknown);
 
     public override void Draw(DrawingContext context)
     {
@@ -36,8 +37,14 @@ public class Button : Widget
     protected override void OnPointerInput(PointerEvent e)
     {
         base.OnPointerInput(e);
-        if (e.Kind == PointerEventKind.Down && e.Button == PointerButton.Primary) pointerPressed = true;
-        if (e.Kind == PointerEventKind.Cancel || (e.Kind == PointerEventKind.Up && e.Button == PointerButton.Primary)) pointerPressed = false;
+        if(e.Kind==PointerEventKind.Enter)insidePointers.Add(e.PointerId);
+        if(e.Kind==PointerEventKind.Leave)insidePointers.Remove(e.PointerId);
+        if(e.Kind==PointerEventKind.Down&&e.Button==PointerButton.Primary)
+        {pressedPointers.Add(e.PointerId);if(ContainsPoint(e.Position))insidePointers.Add(e.PointerId);}
+        if(e.Kind==PointerEventKind.Move&&pressedPointers.Contains(e.PointerId))
+        {if(ContainsPoint(e.Position))insidePointers.Add(e.PointerId);else insidePointers.Remove(e.PointerId);}
+        if(e.Kind==PointerEventKind.Cancel||(e.Kind==PointerEventKind.Up&&e.Button==PointerButton.Primary))
+        {pressedPointers.Remove(e.PointerId);if(e.DeviceKind==PointerDeviceKind.Touch)insidePointers.Remove(e.PointerId);}
     }
     protected override void OnKeyboardInput(KeyEvent e)
     {

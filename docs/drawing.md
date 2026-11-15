@@ -10,7 +10,7 @@ DrawingContext is provided to Widget.Draw and window Paint. It supports filled/s
 
 The backend scales the window's logical client size into its physical drawable size. Do not multiply drawing coordinates or pointer coordinates by PixelDensity yourself. Background Paint runs before the visual tree. A widget's context is already translated into local coordinates and clipped according to its rounded bounds and ancestors.
 
-Contexts expire after callbacks, including exceptional returns. Retaining and using one afterward throws ObjectDisposedException. You do not own its resources. The current API does not expose a native canvas, transform stack, arbitrary paths, images, shaders, or drawing-context disposal.
+Contexts expire after callbacks, including exceptional returns. Retaining and using one afterward throws ObjectDisposedException. You do not own its resources. DrawBitmap, DrawVector, FillPath, and StrokePath provide [image and vector drawing](images-and-vectors.md). The current API does not expose a native canvas, general transform stack, shaders, or drawing-context disposal.
 
 ## Shapes and colors
 

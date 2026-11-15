@@ -24,6 +24,8 @@ The library targets net10.0 and pins:
 | SkiaSharp.NativeAssets.Linux | 4.153.1 | Fontconfig-enabled Linux renderer |
 | Topten.RichTextKit | 0.6.173 | Paragraph shaping, bidi, wrapping, fallback, and caret geometry (Apache-2.0) |
 | AngleSharp | 1.10.3 | HTML text parsing without resource loaders/scripts (MIT) |
+| Svg.Skia | 5.2.3 | Static SVG renderer, document/model dependencies, internal Skia integration (MIT) |
+| StbImageSharp | 2.30.16 | Portable additional raster codecs (Unlicense OR MIT) |
 | ppy.SDL3-CS | 2026.1002.1 | SDL3 family package/native assets |
 
 Swealium's public API does not require using backend types. Package references remain transitive so runtime assets can resolve. Replacing native binaries independently can break ABI/version assumptions.

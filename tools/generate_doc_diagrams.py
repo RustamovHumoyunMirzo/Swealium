@@ -201,6 +201,28 @@ body += text(40,570,"An empty or Hidden explicit stroke also disables automatic 
 body += text(40,610,"ResetStroke() restores state-based defaults. Every border uses the same renderer.",18)
 figures["stroke-styles.svg"] = frame("Stroke styles and focus precedence", "Solid, dashed, dotted, double, and hidden borders follow rounded geometry. Neighboring colors blend through corners. An explicitly assigned stroke replaces automatic default and focus appearance until ResetStroke.",body,height=650)
 
+body = box(40,105,280,80,"Raster files / RGBA pixels") + box(380,105,280,80,"SVG / SVGZ / drawing")
+body += arrow(180,185,180,250)+arrow(520,185,520,250)
+body += box(40,250,280,80,"Bitmap owns pixels","#e6f5ef","#4a9784")
+body += box(380,250,280,80,"VectorImage owns recording","#e6f5ef","#4a9784")
+body += arrow(180,330,180,395)+arrow(520,330,520,395)
+body += box(40,395,280,80,"Image / DrawBitmap")+box(380,395,280,80,"VectorGraphics / DrawVector")
+body += arrow(660,290,730,290)+box(730,250,270,80,"Rasterize → bitmap")
+body += arrow(865,330,865,395)+box(730,395,270,80,"Cursor.FromBitmap")
+body += text(40,525,"Widgets borrow resources. Dispose the owner after its last consumer finishes.",20)
+body += text(40,560,"Cursors snapshot pixels; native handles follow the UI host lifetime.",18)
+figures["media-resources.svg"] = frame("Raster, vector, and cursor ownership", "Raster inputs become owned Bitmaps used by Image or DrawBitmap. SVG or drawing becomes owned VectorImage recordings used by VectorGraphics or DrawVector. Rasterization allows vector-based bitmap cursors. Widgets borrow resources, and custom cursors copy source pixels.",body)
+
+body = box(40,130,280,90,"Widgets + semantic metadata") + arrow(320,175,380,175)
+body += box(380,130,280,90,"AccessibilityHost") + arrow(660,175,720,175)
+body += box(720,130,280,90,"Application bridge adapter")
+body += arrow(860,220,860,330) + box(720,330,280,90,"Native accessibility service")
+body += text(40,310,"Snapshots: roles, names, bounds, state, values",22)
+body += text(40,355,"Actions: invoke, focus, edit, select, scroll",22)
+body += text(40,485,"Swealium provides the host and adapter contract.",22)
+body += text(40,530,"Applications supply UIA / AX / AT-SPI / mobile providers.",20)
+figures["accessibility-boundary.svg"] = frame("Accessibility provider boundary", "Widget metadata becomes semantic snapshots through AccessibilityHost. Applications implement the bridge to native accessibility services, and marshal actions back onto the UI thread. Native providers are not bundled.",body)
+
 OUT.mkdir(parents=True, exist_ok=True)
 for name, value in figures.items():
     target = OUT / name

@@ -71,7 +71,9 @@ public static class SwealiumApplication
                 while (Sdl.SDL_PollEvent(out var e))
                 {
                     if (e.Type == 0x100) Exit();
-                    else if (session.Windows.TryGetValue(e.WindowId, out var target) && !target.IsDisposed && !target.IsCloseRequested)
+                    else if(e.Type==0x1301&&e.WindowId==0)
+                    {foreach(var member in session.Windows.Values.ToArray())member.Input.CancelPointer(new(Input.PointerDeviceKind.Pen,(uint)e.Data1));}
+                    else if (session.Windows.TryGetValue(e.RoutedWindowId, out var target) && !target.IsDisposed && !target.IsCloseRequested)
                         target.HandleSdlEvent(e);
                 }
                 session.CloseRequested();
@@ -92,7 +94,7 @@ public static class SwealiumApplication
             }
             SynchronizationContext.SetSynchronizationContext(previousContext);
             current = null;
-            try { if (initialized) Sdl.SDL_Quit(); }
+            try { if (initialized) {try{SdlCursorManager.Shutdown();}finally{Sdl.SDL_Quit();}} }
             finally { Volatile.Write(ref running, 0); }
         }
         if (failure is not null) ExceptionDispatchInfo.Capture(failure).Throw();

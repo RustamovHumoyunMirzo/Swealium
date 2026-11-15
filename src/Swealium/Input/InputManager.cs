@@ -6,11 +6,34 @@ namespace Swealium.Input;
 public sealed class InputManager
 {
     private Widget? root;
-    private Widget? captured;
-    private readonly List<Widget> hovered = [];
-    private Point lastPosition;
-    private bool hasPointer;
+    private sealed class Contact(PointerId id)
+    {
+        internal readonly PointerId Id=id;
+        internal Widget? Captured,Pressed;
+        internal readonly List<Widget> Hovered=[];
+        internal Point Position;
+        internal PointerButtons Buttons;
+        internal float Pressure;
+        internal bool Eraser;
+        internal float TiltX,TiltY;
+        internal bool Primary=true,Present=true;
+        internal bool Cancelled;
+    }
+    private readonly Dictionary<PointerId,Contact> pointers=[];
+    private PointerId lastMouse=PointerId.Mouse;
     private readonly HashSet<Key> heldModifiers=[];
+    private Cursor defaultCursor=Cursor.Default;
+    public Cursor DefaultCursor {get=>defaultCursor;set{ArgumentNullException.ThrowIfNull(value);value.Verify();defaultCursor=value;}}
+    public Cursor CurrentCursor
+    {
+        get
+        {
+            pointers.TryGetValue(lastMouse,out var mouse);
+            Widget? node=mouse?.Captured??mouse?.Hovered.FirstOrDefault();
+            for(;node is not null;node=node.Parent)if(node.Cursor is {IsDisposed:false} cursor)return cursor;
+            return DefaultCursor.IsDisposed?Cursor.Default:DefaultCursor;
+        }
+    }
     public KeyModifiers Modifiers { get; private set; }
     public Widget? Root
     {
@@ -27,7 +50,12 @@ public sealed class InputManager
         }
     }
     public Widget? FocusedWidget { get; private set; }
-    public Widget? CapturedWidget => captured;
+    public Widget? CapturedWidget => GetCapturedWidget(lastMouse)??pointers.Values.FirstOrDefault(p=>p.Primary&&p.Captured is not null)?.Captured;
+    public IReadOnlyList<PointerInfo> Pointers=>Array.AsReadOnly(pointers.Values.Select(Snapshot).ToArray());
+    public PointerInfo? GetPointer(PointerId id)=>pointers.TryGetValue(id,out var state)?Snapshot(state):null;
+    public Widget? GetCapturedWidget(PointerId id)=>pointers.TryGetValue(id,out var state)?state.Captured:null;
+    public event Action<PointerCaptureChangedEvent>? PointerCaptureChanged;
+    private static PointerInfo Snapshot(Contact p)=>new(p.Id,p.Position,p.Buttons,p.Pressure,p.Primary,p.Buttons!=PointerButtons.None,p.Captured,p.Eraser,p.TiltX,p.TiltY);
     internal event Action? FocusChanged;
     internal event Action? CompositionCancellationRequested;
     internal void CancelNativeComposition() => CompositionCancellationRequested?.Invoke();
@@ -79,44 +107,52 @@ public sealed class InputManager
     {
         if (CanProcessInput?.Invoke() == false) { Cancel(); return; }
         if (FocusedWidget is not null && (!IsAttached(FocusedWidget) || !FocusedWidget.IsFocusable)) Focus(null);
-        if (captured is not null && !IsAttached(captured)) CancelCapture();
-        foreach (var widget in hovered.ToArray())
-            if (!IsAttached(widget))
-            {
-                hovered.Remove(widget);
-                widget.IsPointerOver = false;
-                Deliver(widget, new PointerEvent(PointerEventKind.Leave, lastPosition));
-            }
-        if (hasPointer) UpdateHover(HitTest(lastPosition));
+        foreach(var pointer in pointers.Values.ToArray())
+        {
+            if(pointer.Captured is not null&&!IsAttached(pointer.Captured))ChangeCapture(pointer,null,true);
+            UpdateHover(pointer,pointer.Present?HitTest(pointer.Position):null);
+        }
     }
     public void ProcessPointer(PointerEvent e)
     {
         ArgumentNullException.ThrowIfNull(e);
-        if (e.Kind == PointerEventKind.Cancel) { Cancel(); return; }
+        if (e.Kind == PointerEventKind.Cancel) {CancelPointer(e.PointerId);return;}
         if (CanProcessInput?.Invoke() == false) return;
+        if(!Enum.IsDefined(e.DeviceKind)||!float.IsFinite(e.WindowPosition.X)||!float.IsFinite(e.WindowPosition.Y)||!float.IsFinite(e.Pressure)||e.Pressure<0||e.Pressure>1||!float.IsFinite(e.TiltX)||!float.IsFinite(e.TiltY))throw new ArgumentOutOfRangeException(nameof(e));
         if (!e.HasExplicitModifiers) e.Modifiers=Modifiers;
-        if (e.Kind == PointerEventKind.Leave) { hasPointer = false; ClearHover(); return; }
-        lastPosition = e.WindowPosition;
-        hasPointer = true;
         Validate();
+        if(!pointers.TryGetValue(e.PointerId,out var state))
+        {
+            state=new(e.PointerId);pointers.Add(e.PointerId,state);
+            state.Primary=e.HasExplicitPrimary?e.IsPrimary:e.DeviceKind==PointerDeviceKind.Mouse||!pointers.Values.Any(p=>p!=state&&p.Id.Device==e.DeviceKind&&p.Buttons!=PointerButtons.None);
+        }
+        if(e.DeviceKind==PointerDeviceKind.Mouse)lastMouse=e.PointerId;
+        if(e.Kind==PointerEventKind.Leave){state.Present=false;UpdateHover(state,null);return;}
+        state.Position=e.WindowPosition;state.Pressure=e.Pressure;state.Present=true;state.Eraser=e.IsEraser;state.TiltX=e.TiltX;state.TiltY=e.TiltY;
+        if(e.Kind==PointerEventKind.Down&&state.Buttons==PointerButtons.None&&!e.HasExplicitPrimary)
+            state.Primary=e.DeviceKind==PointerDeviceKind.Mouse||!pointers.Values.Any(p=>p!=state&&p.Id.Device==e.DeviceKind&&p.Buttons!=PointerButtons.None);
+        e.IsPrimary=e.HasExplicitPrimary?e.IsPrimary:state.Primary;
+        if(e.Kind==PointerEventKind.Down)state.Buttons|=ButtonFlag(e.Button);
+        if(e.Kind==PointerEventKind.Up)state.Buttons&=~ButtonFlag(e.Button);
+        e.Buttons=state.Buttons;
         Widget? hit = HitTest(e.WindowPosition);
-        UpdateHover(hit);
-        Widget? target = captured ?? hit;
+        UpdateHover(state,hit);
+        Widget? target = state.Captured ?? hit;
         if (e.Kind == PointerEventKind.Down && e.Button == PointerButton.Primary)
         {
-            CancelCapture();
-            captured = hit;
+            ChangeCapture(state,null,true);state.Pressed=hit;ChangeCapture(state,hit,false);
             target = hit;
             Widget? focusTarget = hit;
             while (focusTarget is not null && !focusTarget.IsFocusable) focusTarget = focusTarget.Parent;
-            Focus(focusTarget);
+            if(e.IsPrimary)Focus(focusTarget);
         }
-        Widget? pressed = captured;
+        Widget? pressed = state.Pressed;
         bool release = e.Kind == PointerEventKind.Up && e.Button == PointerButton.Primary;
-        if (release) captured = null;
+        if (release){state.Pressed=null;ChangeCapture(state,null,false);}
         if (target is not null) Route(target, e, widget => Deliver(widget, e));
-        if (release && !e.Handled && pressed is not null && ReferenceEquals(pressed, hit) && IsAttached(pressed))
+        if (release && !state.Cancelled && !e.Handled && pressed is not null && ReferenceEquals(pressed, hit) && IsAttached(pressed))
             pressed.PerformClick();
+        if(release&&e.DeviceKind==PointerDeviceKind.Touch){UpdateHover(state,null);pointers.Remove(e.PointerId);}
     }
     public void ProcessKey(KeyEvent e)
     {
@@ -196,42 +232,48 @@ public sealed class InputManager
         e.Position = widget.ToLocal(e.WindowPosition);
         widget.RaisePointer(e);
     }
-    private void UpdateHover(Widget? hit)
+    private void UpdateHover(Contact pointer,Widget? hit)
     {
         var next = Path(hit);
-        foreach (var widget in hovered.ToArray())
+        var previous=pointer.Hovered.ToArray();pointer.Hovered.Clear();pointer.Hovered.AddRange(next);
+        foreach (var widget in previous)
             if (!next.Contains(widget))
             {
-                widget.IsPointerOver = false;
-                Deliver(widget, new PointerEvent(PointerEventKind.Leave, lastPosition));
+                widget.IsPointerOver = pointers.Values.Any(p=>p.Hovered.Contains(widget));
+                Deliver(widget, PointerNotification(pointer,PointerEventKind.Leave));
             }
         foreach (var widget in next)
-            if (!hovered.Contains(widget))
+            if (!previous.Contains(widget))
             {
                 widget.IsPointerOver = true;
-                Deliver(widget, new PointerEvent(PointerEventKind.Enter, lastPosition));
+                Deliver(widget, PointerNotification(pointer,PointerEventKind.Enter));
             }
-        hovered.Clear();
-        hovered.AddRange(next);
     }
-    private void ClearHover()
+    private PointerEvent PointerNotification(Contact pointer,PointerEventKind kind)=>new(kind,pointer.Position,modifiers:Modifiers,pointerId:pointer.Id,pressure:pointer.Pressure,isPrimary:pointer.Primary,isEraser:pointer.Eraser,tiltX:pointer.TiltX,tiltY:pointer.TiltY){Buttons=pointer.Buttons};
+    private void ChangeCapture(Contact pointer,Widget? target,bool cancel)
     {
-        var previous = hovered.ToArray();
-        hovered.Clear();
-        foreach (var widget in previous)
-        {
-            widget.IsPointerOver = false;
-            Deliver(widget, new PointerEvent(PointerEventKind.Leave, lastPosition));
-        }
+        var previous=pointer.Captured;if(ReferenceEquals(previous,target))return;
+        pointer.Captured=target;
+        if(cancel){pointer.Pressed=null;if(previous is not null)Deliver(previous,PointerNotification(pointer,PointerEventKind.Cancel));}
+        PointerCaptureChanged?.Invoke(new(pointer.Id,previous,target));
     }
-    private void CancelCapture()
+    public bool CapturePointer(PointerId id,Widget widget)
     {
-        var previous = captured;
-        captured = null;
-        if (previous is not null) Deliver(previous, new PointerEvent(PointerEventKind.Cancel, lastPosition));
+        ArgumentNullException.ThrowIfNull(widget);
+        if(!IsAttached(widget)||CanProcessInput?.Invoke()==false||!pointers.TryGetValue(id,out var pointer))return false;
+        ChangeCapture(pointer,widget,true);return true;
+    }
+    public void ReleasePointerCapture(PointerId id){if(pointers.TryGetValue(id,out var pointer))ChangeCapture(pointer,null,true);}
+    public void CancelPointer(PointerId id)
+    {
+        if(!pointers.TryGetValue(id,out var pointer))return;
+        pointer.Cancelled=true;
+        ChangeCapture(pointer,null,true);UpdateHover(pointer,null);pointers.Remove(id);
     }
     /// <summary>Release capture, hover, and keyboard focus after window deactivation or root replacement.</summary>
-    public void Cancel() { hasPointer = false; heldModifiers.Clear(); Modifiers=KeyModifiers.None; CancelCapture(); ClearHover(); Focus(null); }
+    public void Cancel() {heldModifiers.Clear();Modifiers=KeyModifiers.None;foreach(var id in pointers.Keys.ToArray())CancelPointer(id);Focus(null);}
+    private static PointerButtons ButtonFlag(PointerButton button)=>button switch
+    {PointerButton.Primary=>PointerButtons.Primary,PointerButton.Middle=>PointerButtons.Middle,PointerButton.Secondary=>PointerButtons.Secondary,PointerButton.Back=>PointerButtons.Back,PointerButton.Forward=>PointerButtons.Forward,_=>PointerButtons.None};
     private static KeyModifiers Modifier(Key key)=>key switch
     {
         Key.LeftShift or Key.RightShift=>KeyModifiers.Shift,

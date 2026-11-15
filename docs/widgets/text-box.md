@@ -50,4 +50,6 @@ Default and focus borders are ordinary Swealium Stroke values. Assigning Stroke 
 
 Preedit is underlined with selected-segment background. A native commit replaces the selection captured when composition started as one undoable edit. Focus loss, empty updates, Escape/cancellation clear transient state. Candidate rendering overlays the window tree; the OS IME owns navigation/conversion/commit. Provider behavior still requires manual testing. See the [IME guide](../text.md#ime-preedit-and-candidates) for platform limits.
 
-The editor is not virtualized and has no rich-document editing, password masking, accessibility bridge, or syntax-highlighting API. Use finite Height for a bounded editor viewport; otherwise content participates in intrinsic sizing (minimum one line, or three lines in multiline mode).
+The editor is not virtualized and has no rich-document editing, password masking or syntax-highlighting API. Use finite Height for a bounded editor viewport; otherwise content participates in intrinsic sizing (minimum one line, or three lines in multiline mode).
+
+Selection dragging belongs to one pointer until release/cancellation. Semantic value and selection actions are available through the [accessibility boundary](../accessibility.md); native screen-reader adapters are not bundled.

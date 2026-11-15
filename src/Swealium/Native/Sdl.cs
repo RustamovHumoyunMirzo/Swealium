@@ -83,6 +83,17 @@ internal static partial class Sdl
     {
         [FieldOffset(0)] public uint Type;
         [FieldOffset(16)] public uint WindowId;
+        [FieldOffset(16)] public ulong TouchId;
+        [FieldOffset(24)] public ulong FingerId;
+        [FieldOffset(32)] public float TouchX;
+        [FieldOffset(36)] public float TouchY;
+        [FieldOffset(48)] public float TouchPressure;
+        [FieldOffset(52)] public uint TouchWindowId;
+        [FieldOffset(24)] public uint PenState;
+        [FieldOffset(36)] public byte PenButton;
+        [FieldOffset(36)] public int PenAxis;
+        [FieldOffset(40)] public float PenValue;
+        public readonly uint RoutedWindowId=>Type is >=0x700 and <=0x703?TouchWindowId:WindowId;
         [FieldOffset(20)] public int Data1;
         [FieldOffset(24)] public int Data2;
         [FieldOffset(24)] public byte Button;

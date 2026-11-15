@@ -14,8 +14,8 @@ public class ScrollContainer : Container
     private Size extent;
     private Rect viewport;
     private bool horizontalShown,verticalShown;
-    private ScrollAxis? dragging;
-    private float dragGrab;
+    private readonly Dictionary<PointerId,(ScrollAxis Axis,float Grab)> drags=[];
+    private readonly HashSet<PointerId> barPresses=[];
     private Point pointer=new(-1,-1);
     private Point reportedOffset;
     private Size reportedExtent;
@@ -164,7 +164,7 @@ public class ScrollContainer : Container
         Rect area=ContentBounds;
         float maximum=vertical?MaximumOffset.Y:MaximumOffset.X,value=vertical?offset.Y:offset.X;
         float page=vertical?viewport.Height:viewport.Width,total=vertical?extent.Height:extent.Width;
-        if (!shown) return new(axis,false,default,default,value,maximum,page,total,false,dragging==axis);
+        if (!shown) return new(axis,false,default,default,value,maximum,page,total,false,drags.Values.Any(d=>d.Axis==axis));
         float thickness=Math.Min(style.Thickness,vertical?area.Width:area.Height);
         Rect track=vertical?new(area.X+area.Width-thickness,area.Y,thickness,Math.Max(0,area.Height-(horizontalShown?Math.Min(HorizontalScrollBarStyle.Thickness,area.Height):0))):
             new(area.X,area.Y+area.Height-thickness,Math.Max(0,area.Width-(verticalShown?Math.Min(VerticalScrollBarStyle.Thickness,area.Width):0)),thickness);
@@ -174,7 +174,7 @@ public class ScrollContainer : Container
         float thumbLength=Math.Clamp(total<=0?length:length*(page/total),Math.Min(length,style.MinimumThumbLength),length);
         float position=maximum<=0?0:(length-thumbLength)*(value/maximum);
         Rect thumb=vertical?new(track.X,track.Y+position,track.Width,thumbLength):new(track.X+position,track.Y,thumbLength,track.Height);
-        return new(axis,true,track,thumb,value,maximum,page,total,track.Contains(pointer),dragging==axis);
+        return new(axis,true,track,thumb,value,maximum,page,total,track.Contains(pointer),drags.Values.Any(d=>d.Axis==axis));
     }
     private ScrollAxis? BarAt(Point point)
     {
@@ -199,14 +199,15 @@ public class ScrollContainer : Container
     {
         base.OnPointerInput(e);
         if (e.Kind==PointerEventKind.Leave) pointer=new(-1,-1);else pointer=e.Position;
-        if (e.Kind==PointerEventKind.Cancel) {dragging=null;return;}
-        if (e.Kind==PointerEventKind.Up && e.Button==PointerButton.Primary && dragging.HasValue)
-        {dragging=null;e.Handled=true;return;}
+        if (e.Kind==PointerEventKind.Cancel) {drags.Remove(e.PointerId);barPresses.Remove(e.PointerId);return;}
+        if (e.Kind==PointerEventKind.Up && e.Button==PointerButton.Primary && barPresses.Remove(e.PointerId))
+        {drags.Remove(e.PointerId);e.Handled=true;return;}
         if (e.Kind==PointerEventKind.Down && e.Button==PointerButton.Primary && ReferenceEquals(e.Source,this) && BarAt(e.Position) is { } axis)
         {
             var bar=Bar(axis);bool vertical=axis==ScrollAxis.Vertical;
+            barPresses.Add(e.PointerId);
             if (bar.Thumb.Contains(e.Position))
-            {dragging=axis;dragGrab=(vertical?e.Position.Y-bar.Thumb.Y:e.Position.X-bar.Thumb.X);}
+            {if(!drags.Values.Any(d=>d.Axis==axis))drags[e.PointerId]=(axis,vertical?e.Position.Y-bar.Thumb.Y:e.Position.X-bar.Thumb.X);}
             else
             {
                 float coordinate=vertical?e.Position.Y:e.Position.X,origin=vertical?bar.Thumb.Y:bar.Thumb.X;
@@ -215,11 +216,12 @@ public class ScrollContainer : Container
             }
             e.Handled=true;return;
         }
-        if (e.Kind==PointerEventKind.Move && dragging is { } active)
+        if (e.Kind==PointerEventKind.Move && drags.TryGetValue(e.PointerId,out var drag))
         {
+            var active=drag.Axis;
             var bar=Bar(active);bool vertical=active==ScrollAxis.Vertical;
             float travel=vertical?bar.Track.Height-bar.Thumb.Height:bar.Track.Width-bar.Thumb.Width;
-            float position=(vertical?e.Position.Y-bar.Track.Y:e.Position.X-bar.Track.X)-dragGrab;
+            float position=(vertical?e.Position.Y-bar.Track.Y:e.Position.X-bar.Track.X)-drag.Grab;
             float value=travel<=0?0:Math.Clamp(position/travel,0,1)*bar.MaximumOffset;
             SetOffset(vertical?new(offset.X,value):new(value,offset.Y));e.Handled=true;return;
         }

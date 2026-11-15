@@ -4,6 +4,8 @@
 
 Namespace: Swealium.Input. Processing/routing is mutable and should stay on the UI thread.
 
+Cursor/CursorKind, InputManager.DefaultCursor/CurrentCursor, widget inheritance, and custom cursor ownership are described in the [cursor reference](../cursors.md).
+
 ## InputManager
 
 Sealed, public parameterless constructor. Each window exposes its own instance.
@@ -64,7 +66,7 @@ Constructor: PointerEvent(PointerEventKind kind, Point position, PointerButton b
 | WheelDelta | Scroll amounts; SDL's flipped direction is normalized by native decoding |
 | Modifiers | Event modifier state; native pointer decoding combines tracked key transitions with native modifier state |
 
-Properties are read-only to callers. This is currently a single-pointer/mouse-style API; it has no pointer ID, pressure, multiple-touch routing, or public manual capture API. Touch synthesized as mouse by a native backend may still generate mouse-style input.
+Properties are read-only to callers. The constructor also accepts optional pointerId, pressure, isPrimary, isEraser, tiltX, and tiltY. PointerId, DeviceKind, Pressure, IsPrimary, IsEraser, TiltX/TiltY, and Buttons describe the contact. See [multiple-pointer contracts](../multiple-pointers.md) for defaults, native decoding, capture, and lifetime.
 
 PointerButton values: None, Primary, Middle, Secondary, Back, Forward. Native unknown buttons map to None.
 
@@ -84,3 +86,7 @@ Constructor: TextInputEvent(string text). Read-only Text contains committed Unic
 
 A focused widget must set AcceptsTextInput=true. Native text-service activation and TextInputArea placement are synchronized with that opt-in. CompositionInput/CandidatesInput, TextCompositionEvent/TextCandidatesEvent, and InputManager.ProcessComposition/ProcessCandidates supply preedit/candidate routing; see [text contracts](text.md) for ranges, validation, ownership, and editor behavior.
 
+
+## Contact snapshots and capture
+
+`Pointers` returns read-only PointerInfo snapshots; `GetPointer(PointerId)` returns one or null. `GetCapturedWidget(PointerId)` queries per-contact capture. `CapturePointer(PointerId, Widget)` and `ReleasePointerCapture(PointerId)` manage capture; `CancelPointer(PointerId)` cancels a contact. `PointerCaptureChanged` publishes PointerCaptureChangedEvent with identity, previous, and current widget. CapturedWidget remains a compatibility view of the mouse or primary contact.

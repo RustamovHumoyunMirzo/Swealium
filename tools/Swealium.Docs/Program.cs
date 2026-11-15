@@ -35,6 +35,9 @@ foreach (Type type in types)
     string contract = type.Namespace switch
     {
         _ when typeof(Widget).IsAssignableFrom(type) => "../widgets/"+WidgetPage(type),
+        "Swealium.Accessibility" => "accessibility.md",
+        _ when type.Name is "Cursor" or "CursorKind" => "../cursors.md",
+        "Swealium.Graphics" when type.Name.StartsWith("Bitmap",StringComparison.Ordinal)||type.Name.StartsWith("Vector",StringComparison.Ordinal)||type.Name.StartsWith("Image",StringComparison.Ordinal)||type.Name.StartsWith("Path",StringComparison.Ordinal) => "media.md",
         "Swealium.UI" when type.Name.StartsWith("Scroll", StringComparison.Ordinal) => "../widgets/scroll-container.md",
         _ when type.Name.StartsWith("Text", StringComparison.Ordinal) || type.Name == "Clipboard" => "text.md",
         "Swealium.Graphics" => "graphics.md",
@@ -47,7 +50,7 @@ foreach (Type type in types)
     text.AppendLine($"Behavior, defaults, and examples: [{Path.GetFileNameWithoutExtension(contract)}]({contract}).").AppendLine();
     text.AppendLine("```csharp");
     bool recordClass = !type.IsValueType && type.GetMethod("<Clone>$") is not null;
-    string kind = type.IsEnum ? "enum" : type.IsValueType ? "readonly record struct" :
+    string kind = type.IsInterface ? "interface" : type.IsEnum ? "enum" : type.IsValueType ? "readonly record struct" :
         type.IsAbstract && type.IsSealed ? "static class" : (type.IsAbstract ? "abstract class" : type.IsSealed ? recordClass ? "sealed record" : "sealed class" : "class");
     var bases = new List<string>();
     if (type.BaseType is { } parent && parent != typeof(object) && !type.IsValueType) bases.Add(Name(parent));

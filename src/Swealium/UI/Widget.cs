@@ -1,14 +1,22 @@
 using Swealium.Graphics;
 using Swealium.Input;
+using Swealium.Accessibility;
 namespace Swealium.UI;
 
 /// <summary>A retained visual. Bounds are relative to the parent; drawing and input are local.</summary>
 public abstract class Widget
 {
+    private static long nextSemanticId;
+    internal long SemanticId {get;}=Interlocked.Increment(ref nextSemanticId);
+    public AccessibilityProperties Accessibility {get;}=new();
+    protected virtual bool OnAccessibilityAction(AccessibilityActionRequest request)=>false;
+    internal bool RaiseAccessibilityAction(AccessibilityActionRequest request)=>OnAccessibilityAction(request);
     private float x, y, width = float.NaN, height = float.NaN;
     private float minWidth, minHeight, maxWidth = float.PositiveInfinity, maxHeight = float.PositiveInfinity, grow;
     private Thickness margin, padding;
     private Stroke? localStroke;
+    private Cursor? cursor;
+    private float opacity=1;
     private Alignment? horizontalAlignment, verticalAlignment;
     private bool isVisible = true, layoutDirty = true, arranged;
     private Rect layoutBounds;
@@ -58,7 +66,11 @@ public abstract class Widget
         set { if (!Enum.IsDefined(value)) throw new ArgumentOutOfRangeException(nameof(value)); weightBasis = value; InvalidateLayout(); }
     }
     public int ZIndex { get; set; }
+    /// <summary>Group opacity of this visual, descendants, overlay and stroke. Does not change input/layout eligibility.</summary>
+    public float Opacity {get=>opacity;set{ImageLayout.ValidateOpacity(value);opacity=value;}}
     public CornerRadii Radii { get; set; }
+    /// <summary>Null inherits the nearest ancestor cursor, then the window default.</summary>
+    public Cursor? Cursor {get=>cursor;set{value?.Verify();cursor=value;}}
     /// <summary>Effective stroke. Explicit assignment suppresses automatic default/focus styling until ResetStroke.</summary>
     public Stroke Stroke { get=>localStroke??(IsFocused?FocusStroke:GetDefaultStroke());set=>localStroke=value; }
     public Stroke FocusStroke { get; set; }
@@ -169,6 +181,7 @@ public abstract class Widget
     public virtual void OnMouseMove(float x, float y) { }
     protected virtual void OnPointerInput(PointerEvent e)
     {
+        if(!e.IsPrimary)return;
         switch (e.Kind)
         {
             case PointerEventKind.Down: OnMouseDown(e.Position.X, e.Position.Y); break;

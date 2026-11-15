@@ -13,6 +13,13 @@ public abstract class DrawingContext
     /// <summary>Draw shaped text at a baseline origin.</summary>
     public abstract void DrawText(string text, Point baseline, Color color, float fontSize = 16);
     public abstract Size MeasureText(string text, float fontSize = 16);
+    public virtual void DrawVector(VectorImage image,Rect destination,float opacity=1,Rect? clip=null)=>throw new NotSupportedException("This drawing context does not implement vector images.");
+    public virtual void FillPath(VectorPath path,Color color)=>throw new NotSupportedException("This drawing context does not implement vector paths.");
+    public virtual void StrokePath(VectorPath path,Color color,float width=1,PathLineCap cap=PathLineCap.Flat,PathLineJoin join=PathLineJoin.Miter)=>throw new NotSupportedException("This drawing context does not implement vector paths.");
+    public virtual void DrawBitmap(Bitmap bitmap,Rect destination,Rect? source=null,float opacity=1,BitmapInterpolation interpolation=BitmapInterpolation.Linear,Rect? clip=null)=>
+        throw new NotSupportedException("This drawing context does not implement bitmaps.");
+    public void DrawBitmap(Bitmap bitmap,Point origin,float opacity=1,BitmapInterpolation interpolation=BitmapInterpolation.Linear)=>
+        DrawBitmap(bitmap,new Rect(origin.X,origin.Y,bitmap.Width,bitmap.Height),opacity:opacity,interpolation:interpolation);
     public virtual void DrawTextLayout(TextLayout layout, Point origin, TextSelection? selection = null, Color? selectionColor = null, Rect? clip = null) =>
         throw new NotSupportedException("This drawing context does not implement shaped paragraphs.");
     public void DrawText(string text, Rect bounds, TextStyle? style = null, TextOptions? options = null, TextMarkup markup = TextMarkup.Plain)

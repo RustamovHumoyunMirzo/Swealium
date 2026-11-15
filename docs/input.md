@@ -69,3 +69,5 @@ ProcessPointer, ProcessKey, and ProcessText accept Swealium-owned event objects.
 
 A window's InputManager rejects synthetic input while its window is hidden, minimized, closing, disposed, or blocked by a modal dialog. A standalone InputManager has no window policy. All processing and tree mutation should run on the UI thread.
 
+
+See [multiple pointers](multiple-pointers.md) for independent touch/pen/mouse capture and [accessibility](accessibility.md) for semantic input actions.

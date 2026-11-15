@@ -7,19 +7,33 @@ internal static class SdlInput
 {
     internal static void Dispatch(Sdl.Event e, InputManager input)
     {
+        if(e.Type is >=0x400 and <=0x403 && (uint)e.Data1>=uint.MaxValue-1)return; // touch/pen-emulated mouse
+        var mouse=new PointerId(PointerDeviceKind.Mouse,(uint)e.Data1);
         switch (e.Type)
         {
-            case 0x400: input.ProcessPointer(new(PointerEventKind.Move, new(e.MouseX, e.MouseY), modifiers:PointerModifiers(input))); break;
+            case 0x400: input.ProcessPointer(new(PointerEventKind.Move, new(e.MouseX, e.MouseY), modifiers:PointerModifiers(input),pointerId:mouse)); break;
             case 0x401:
             case 0x402:
                 input.ProcessPointer(new(e.Type == 0x401 ? PointerEventKind.Down : PointerEventKind.Up,
-                    new(e.MouseX, e.MouseY), Button(e.Button), modifiers:PointerModifiers(input)));
+                    new(e.MouseX, e.MouseY), Button(e.Button), modifiers:PointerModifiers(input),pointerId:mouse));
                 break;
             case 0x403:
                 float direction = e.WheelDirection == 1 ? -1 : 1;
                 input.ProcessPointer(new(PointerEventKind.Wheel, new(e.WheelMouseX, e.WheelMouseY),
-                    wheelDelta: new Point(e.WheelX * direction, e.WheelY * direction),modifiers:PointerModifiers(input)));
+                    wheelDelta: new Point(e.WheelX * direction, e.WheelY * direction),modifiers:PointerModifiers(input),pointerId:mouse));
                 break;
+            case >=0x700 and <=0x703:
+                if(e.TouchId>=ulong.MaxValue-1)break; // mouse/pen-emulated touch
+                Size viewport=input.Root?.LayoutViewport??new Size(input.Root?.ActualWidth??0,input.Root?.ActualHeight??0);
+                var touch=new PointerId(PointerDeviceKind.Touch,e.TouchId,e.FingerId);
+                if(e.Type==0x703){input.CancelPointer(touch);break;}
+                if(!float.IsFinite(e.TouchX)||!float.IsFinite(e.TouchY)||!float.IsFinite(e.TouchPressure))break;
+                input.ProcessPointer(new(e.Type==0x700?PointerEventKind.Down:e.Type==0x701?PointerEventKind.Up:PointerEventKind.Move,
+                    new(e.TouchX*viewport.Width,e.TouchY*viewport.Height),e.Type==0x702?PointerButton.None:PointerButton.Primary,
+                    modifiers:PointerModifiers(input),pointerId:touch,pressure:Math.Clamp(e.TouchPressure,0,1)));
+                break;
+            case >=0x1300 and <=0x1307:
+                DispatchPen(e,input);break;
             case 0x300:
             case 0x301:
                 input.ProcessKey(new(MapKey(e.ScanCode,e.KeyCode,e.Modifiers), e.Type == 0x300, Modifiers(e.Modifiers), e.Repeat != 0));
@@ -44,6 +58,24 @@ internal static class SdlInput
             case 0x20d: input.ProcessPointer(new(PointerEventKind.Leave, default)); break;
             case 0x20f: input.Cancel(); break;
         }
+    }
+    private static void DispatchPen(Sdl.Event e,InputManager input)
+    {
+        var id=new PointerId(PointerDeviceKind.Pen,(uint)e.Data1);
+        if(e.Type==0x1301){input.CancelPointer(id);return;}
+        if(e.Type==0x1300)return;
+        if(!float.IsFinite(e.MouseX)||!float.IsFinite(e.MouseY))return;
+        var previous=input.GetPointer(id);float pressure=previous?.Pressure??0,tiltX=previous?.TiltX??0,tiltY=previous?.TiltY??0;
+        bool eraser=(e.PenState&(1u<<30))!=0||(e.Type is 0x1302 or 0x1303&&e.PenButton!=0);
+        if(e.Type==0x1307)
+        {
+            if(!float.IsFinite(e.PenValue))return;
+            if(e.PenAxis==0)pressure=Math.Clamp(e.PenValue,0,1);
+            if(e.PenAxis==1)tiltX=e.PenValue;if(e.PenAxis==2)tiltY=e.PenValue;
+        }
+        PointerEventKind kind=e.Type is 0x1302 or 0x1304?PointerEventKind.Down:e.Type is 0x1303 or 0x1305?PointerEventKind.Up:PointerEventKind.Move;
+        PointerButton button=e.Type is 0x1302 or 0x1303?PointerButton.Primary:e.Type is 0x1304 or 0x1305?(e.PenButton==1?PointerButton.Secondary:e.PenButton==2?PointerButton.Middle:PointerButton.None):PointerButton.None;
+        input.ProcessPointer(new(kind,new(e.MouseX,e.MouseY),button,modifiers:PointerModifiers(input),pointerId:id,pressure:pressure,isEraser:eraser,tiltX:tiltX,tiltY:tiltY));
     }
     private static int Utf16Offset(string text, int characters)
     {

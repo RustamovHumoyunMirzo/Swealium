@@ -163,3 +163,9 @@ Automatic, Content, Fill. These are per-axis Widget sizing policies, not track l
 
 Grid, GridLength, GridUnit, GridTrack, and GridTrackCollection are documented in the [Grid API reference](grid.md).
 
+
+## Opacity and semantics
+
+`Opacity` defaults to 1 and accepts finite values from 0 to 1. It composites the widget, descendants, overlays, and stroke as one group; nested opacity multiplies. Zero opacity suppresses painting but preserves layout, hit testing, and accessibility. Image and VectorGraphics inherit this property.
+
+`Accessibility` exposes mutable semantic metadata. Override protected `OnAccessibilityAction(AccessibilityActionRequest)` for custom actions. See [accessibility contracts](accessibility.md).

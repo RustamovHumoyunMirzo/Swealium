@@ -75,6 +75,8 @@ button.ResetStroke();   // restore automatic focus styling
 
 ## Appearance and input
 
+Cursor is a nullable Swealium.Input.Cursor. Null inherits from an ancestor or window default; setting a disposed cursor is rejected. Button/TextBox initialize Pointer/Text respectively. Capture retains the drag source's cursor; native resources belong to the host and custom descriptors remain caller-owned. See [all cursor types and bitmap cursors](../cursors.md).
+
 `Radii` defaults to zero; `ClipToBounds=true` clips the subtree and hit testing to the normalized rounded shape. `ContainsPoint(Point)` is virtual and uses that shape by default. Overriding it changes hit membership, not drawing. ScrollContainer additionally clips descendants to its viewport even with ClipToBounds=false.
 
 `IsVisible=true` controls collapsed layout and drawing/input. `IsEnabled=true` preserves layout/drawing but gates input through ancestors. `IsHitTestVisible=true` controls subtree pointer eligibility. `IsFocusable=false` and `AcceptsTextInput=false` opt into focus/text services when set. `TextInputArea` is a virtual local rectangle defaulting to ContentBounds; windows translate it to anchor native IME UI.
@@ -104,3 +106,9 @@ public sealed class Swatch : Widget
 ```
 
 Draw in local logical units, use ActualWidth/Height, and do not retain DrawingContext. See [custom widgets](../custom-widgets.md) and [input contracts](../api/input.md) for routing/lifetime details.
+
+## Opacity and semantics
+
+`Opacity` defaults to 1 and accepts finite values from 0 to 1. It composites the widget, descendants, overlays, and stroke as one group; nested opacity multiplies. Zero opacity suppresses painting but preserves layout, hit testing, and accessibility. Image and VectorGraphics inherit this property.
+
+`Accessibility` exposes mutable semantic metadata. Override protected `OnAccessibilityAction(AccessibilityActionRequest)` for custom actions. See [accessibility contracts](../api/accessibility.md).

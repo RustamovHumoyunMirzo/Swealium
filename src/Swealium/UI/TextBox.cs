@@ -11,6 +11,7 @@ public class TextBox : Widget
     private string placeholder = "";
     private TextStyle style = new();
     private bool multiline, dragging, readOnly;
+    private PointerId? selectionPointer;
     private int anchor, caret, compositionStart, compositionLength, preeditStart, preeditLength;
     private float scrollX, scrollY;
     private bool alternate;
@@ -20,7 +21,7 @@ public class TextBox : Widget
     private readonly List<State> undo = [], redo = [];
     private IReadOnlyList<string> candidates = Array.Empty<string>();
     private sealed record State(string Text, int Anchor, int Caret);
-    public TextBox() { IsFocusable = true; AcceptsTextInput = true; Padding = new(8); Radii = new(4); MinWidth = 80; FocusStroke=new(1,new(60,110,220)); }
+    public TextBox() { IsFocusable = true; AcceptsTextInput = true; Padding = new(8); Radii = new(4); MinWidth = 80; FocusStroke=new(1,new(60,110,220)); Cursor=Swealium.Input.Cursor.Text; }
     protected override Stroke GetDefaultStroke()=>new(1,BorderColor);
     public string Text
     {
@@ -169,9 +170,12 @@ public class TextBox : Widget
     {
         base.OnPointerInput(e);
         if (e.Kind == PointerEventKind.Down && e.Button == PointerButton.Primary)
-        { CancelComposition(); dragging = true; Place(e.Position, false); e.Handled = true; }
-        else if (e.Kind == PointerEventKind.Move && dragging) { Place(e.Position, true); e.Handled = true; }
-        else if (e.Kind is PointerEventKind.Up or PointerEventKind.Cancel) dragging = false;
+        {
+            if(e.IsPrimary&&(!dragging||selectionPointer==e.PointerId)){CancelComposition();dragging=true;selectionPointer=e.PointerId;Place(e.Position,false);}
+            e.Handled=true;
+        }
+        else if (e.Kind == PointerEventKind.Move && dragging&&selectionPointer==e.PointerId) { Place(e.Position, true); e.Handled = true; }
+        else if (e.Kind is PointerEventKind.Up or PointerEventKind.Cancel&&selectionPointer==e.PointerId){dragging=false;selectionPointer=null;}
         else if (e.Kind == PointerEventKind.Wheel)
         {
             using var layout=Layout(ContentBounds.Width);
@@ -212,7 +216,7 @@ public class TextBox : Widget
         if (IsReadOnly) return;
         candidates = e.Candidates; SelectedCandidate = e.SelectedIndex; CandidatesHorizontal = e.Horizontal; e.Handled = true;
     }
-    protected override void OnFocusChanged() { if (!IsFocused) { dragging = false; ClearComposition(false); } blink = Stopwatch.GetTimestamp(); }
+    protected override void OnFocusChanged() { if (!IsFocused) { dragging = false;selectionPointer=null; ClearComposition(false); } blink = Stopwatch.GetTimestamp(); }
     protected override void OnKeyboardInput(KeyEvent e)
     {
         if (!e.IsDown) return;

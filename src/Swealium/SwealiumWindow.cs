@@ -3,6 +3,7 @@ using Swealium.Graphics;
 using Swealium.Input;
 using Swealium.Native;
 using Swealium.UI;
+using Swealium.Accessibility;
 using System.Runtime.ExceptionServices;
 namespace Swealium;
 
@@ -24,6 +25,7 @@ public partial class SwealiumWindow : IDisposable
     private readonly Widget? previousOwnerFocus;
     public SwealiumWindow(WindowOptions? options = null, SwealiumWindow? owner = null)
     {
+        Accessibility=new(this);
         SwealiumApplication.VerifyAccess();
         this.options = options ?? new();
         ArgumentNullException.ThrowIfNull(this.options.Title);
@@ -154,6 +156,7 @@ public partial class SwealiumWindow : IDisposable
     public bool IsCloseRequested { get; private set; }
     public Size ClientSize { get; private set; }
     public InputManager Input { get; } = new();
+    public AccessibilityHost Accessibility {get;}
     /// <summary>The root fills the logical client area. Children use parent-relative bounds.</summary>
     public Widget? Content
     {
@@ -193,7 +196,9 @@ public partial class SwealiumWindow : IDisposable
         {
             UpdateViewport();
             Input.Validate();
+            SyncCursor();
             SyncTextInput();
+            Accessibility.RefreshIfObserved();
             Sdl.Check(Sdl.SDL_GetRenderOutputSize(renderer, out int width, out int height));
             if (width <= 0 || height <= 0 || ClientSize.Width <= 0 || ClientSize.Height <= 0) return;
             if (bitmap is null || bitmap.Width != width || bitmap.Height != height) ResizeSurface(width, height);
@@ -285,8 +290,10 @@ public partial class SwealiumWindow : IDisposable
             try { child.Dispose(); } catch (Exception error) { failure ??= error; }
         }
         try { Input.Root = null; } catch (Exception error) { failure ??= error; }
+        try { Accessibility.Close(); } catch (Exception error) { failure ??= error; }
         Input.FocusChanged -= SyncTextInput;
         Input.CompositionCancellationRequested -= CancelNativeComposition;
+        SdlCursorManager.ReleaseWindow(window);
         ReleaseSurface();
         if (renderer != 0) Sdl.SDL_DestroyRenderer(renderer);
         if (window != 0) Sdl.SDL_DestroyWindow(window);
@@ -311,14 +318,15 @@ public partial class SwealiumWindow : IDisposable
     internal void HandleSdlEvent(Sdl.Event e)
     {
         VerifyAccess();
-        if (e.WindowId != Id) return;
-        if (IsInputBlocked && (e.Type == 0x210 || e.Type is >= 0x300 and < 0x500)) return;
+        if (e.RoutedWindowId != Id) return;
+        if (IsInputBlocked && (e.Type == 0x210 || e.Type is >= 0x300 and < 0x800 ||e.Type is >=0x1300 and <=0x1307)) return;
         if (e.Type == 0x210) { RequestClose(); return; }
         if (e.Type is 0x2000 or 0x2001) ReleaseSurface();
         HandleWindowEvent(e);
         if (disposed || IsCloseRequested) return;
-        if (e.Type is 0x20d or 0x20f) return;
+        if (e.Type is 0x20d or 0x20f) {if(Sdl.SDL_GetMouseFocus()==0)SdlCursorManager.ReleaseWindow(window);return;}
         SdlInput.Dispatch(e, Input);
+        SyncCursor();
     }
     protected virtual void OnClosing(WindowClosingEvent e) => Closing?.Invoke(e);
     protected virtual void OnClosed() => Closed?.Invoke();

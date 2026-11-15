@@ -1,8 +1,42 @@
 using Swealium;
 using Swealium.Graphics;
+using Swealium.Input;
 using Swealium.UI;
 
 bool smokeTest = args.Contains("--smoke-test");
+if(args.Contains("--media-demo"))
+{
+    using var pixels=Bitmap.Load(Path.Combine(AppContext.BaseDirectory,"cat.png"));
+    using var svg=VectorImage.Parse("<svg xmlns='http://www.w3.org/2000/svg' width='240' height='140'><defs><linearGradient id='g'><stop stop-color='#8d61d8'/><stop offset='1' stop-color='#3aafae'/></linearGradient></defs><rect width='240' height='140' rx='22' fill='url(#g)'/><path d='M45 70 L95 108 L195 30' fill='none' stroke='white' stroke-width='12' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    using var path=new VectorPath();path.MoveTo(new(10,80)).CubicTo(new(70,-30),new(160,170),new(230,45));
+    using var recorded=VectorImage.Create(new(0,0,240,140),drawing=>
+    {drawing.FillRectangle(new(0,0,240,140),new Color(35,42,58));drawing.StrokePath(path,new Color(240,190,100),8,PathLineCap.Round);drawing.DrawText("Recorded vector",new Point(15,128),Color.White,18);});
+    using var cursorPixels=svg.Rasterize(32,32);using var custom=Cursor.FromBitmap(cursorPixels,4,4);
+    SwealiumApplication.Run(new(){Title="Swealium — bitmaps, vectors, and cursors",Width=980,Height=720},window=>
+    {
+        var root=new Container{Padding=new(24),Gap=16,Background=new(23,27,36)};
+        root.Children.Add(new Text{Content="Bitmap · SVG · Recorded vector · Custom cursors",Style=new(){FontSize=25,Foreground=Color.White}});
+        var row=new Container{Layout=LayoutMode.Horizontal,Gap=16,Height=210};
+        row.Children.Add(new Image{Source=pixels,Weight=1,WeightBasis=WeightBasis.Zero,Padding=new(8),Radii=new(16),Stroke=new Stroke(2,new(90,125,175))});
+        row.Children.Add(new VectorGraphics{Source=svg,Weight=1,WeightBasis=WeightBasis.Zero,Padding=new(8),Radii=new(16),Stroke=new Stroke(2,new(150,100,210))});
+        row.Children.Add(new VectorGraphics{Source=recorded,Weight=1,WeightBasis=WeightBasis.Zero,Padding=new(8),Radii=new(16),Stroke=new Stroke(2,new(210,160,80))});
+        root.Children.Add(row);
+        root.Children.Add(new Text{Content="Hover to preview a cursor. Click to set the window default. Scroll for all system types.",Style=new(){Foreground=new(190,205,225)}});
+        var scroll=new ScrollContainer{Weight=1,WeightBasis=WeightBasis.Zero};var choices=new WrapContainer{Gap=8,LineGap=8};scroll.Children.Add(choices);
+        var status=new Text{Content="Window cursor: Default",Style=new(){Foreground=Color.White}};
+        foreach(var cursor in Cursor.SystemCursors)AddCursorChoice(cursor,cursor.Kind.ToString());
+        AddCursorChoice(Cursor.VSplit,"VSplit");AddCursorChoice(Cursor.HSplit,"HSplit");
+        AddCursorChoice(custom,"Bitmap cursor");AddCursorChoice(Cursor.Hidden,"Hidden");
+        void AddCursorChoice(Cursor cursor,string name)
+        {
+            var button=new Button{Text=name,Cursor=cursor,Width=175,Height=44,FontSize=13};
+            button.Click+=()=>{window.Cursor=cursor;status.Content=$"Window cursor: {name}";};choices.Children.Add(button);
+        }
+        root.Children.Add(scroll);root.Children.Add(status);window.Content=root;
+        if(smokeTest){window.Cursor=custom;int frames=0;window.Paint+=(_,_)=>{if(++frames==3)window.RequestClose();};}
+    });
+    return;
+}
 if (args.Contains("--scroll-demo"))
 {
     SwealiumApplication.Run(new(){Title="Swealium — scrolling and per-side strokes",Width=820,Height=620},window=>

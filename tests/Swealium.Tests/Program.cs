@@ -58,6 +58,19 @@ Run("native held Shift, keypad Home/End, logical line edges, and selection pixel
 Run("native and nested Shift-wheel horizontal routing",Swealium.Tests.EditingStrokeRegressionTests.ShiftWheel);
 Run("public focus strokes and explicit local stroke precedence",Swealium.Tests.EditingStrokeRegressionTests.FocusStrokes);
 Run("solid/dashed/dotted/double/hidden stroke styles and blended corners",Swealium.Tests.EditingStrokeRegressionTests.StrokeStyles);
+Run("raster format fixtures, encoders, streams, alpha, and decode limits",Swealium.Tests.MediaTests.BitmapFormats);
+Run("bitmap drawing, source crops, opacity, pixel ownership, and context lifetime",Swealium.Tests.MediaTests.BitmapDrawing);
+Run("SVG/SVGZ, recorded vectors, paths, resource policy, and rasterization",Swealium.Tests.MediaTests.VectorRendering);
+Run("image/vector widget layout, aspect ratio, clipping, and input",Swealium.Tests.MediaTests.DisplayWidgets);
+Run("system/custom cursors, inheritance, capture, snapshots, and disposal",Swealium.Tests.MediaTests.CursorRouting);
+Run("native cursor caches, windows, headless fallback, and repeated session cleanup",Swealium.Tests.MediaTests.NativeCursors);
+Run("subtree opacity, overlapping children, strokes, and image compatibility",Swealium.Tests.InteractionBoundaryTests.Opacity);
+Run("base64/data URIs and bitmap resize/crop/rotate/flip/clear operations",Swealium.Tests.InteractionBoundaryTests.BitmapOperations);
+Run("independent pointer capture, primary focus, aggregate hover, and cancellation",Swealium.Tests.InteractionBoundaryTests.MultiplePointers);
+Run("SDL touch routing, normalized positions, pen metadata, and emulation filtering",Swealium.Tests.InteractionBoundaryTests.NativePointers);
+Run("simultaneous scrollbar drags and single-owner text selection",Swealium.Tests.InteractionBoundaryTests.MultipleControlDrags);
+Run("semantic tree, clipping, stable IDs, redaction, and accessibility actions",Swealium.Tests.InteractionBoundaryTests.AccessibilityTree);
+Run("accessibility bridge attach/publish/detach, thread checks, and failure cleanup",Swealium.Tests.InteractionBoundaryTests.BridgeLifecycle);
 Console.WriteLine($"{result.Passed} passed; {result.Failed} failed.");
 return result.Failed == 0 ? 0 : 1;
 
@@ -261,6 +274,8 @@ static void PublicApi()
               !(type.Namespace ?? "").StartsWith("Topten", StringComparison.Ordinal) &&
               !(type.Namespace ?? "").StartsWith("HarfBuzzSharp", StringComparison.Ordinal) &&
               !(type.Namespace ?? "").StartsWith("AngleSharp", StringComparison.Ordinal) &&
+              !(type.Namespace ?? "").StartsWith("Svg", StringComparison.Ordinal) &&
+              !(type.Namespace ?? "").StartsWith("StbImageSharp", StringComparison.Ordinal) &&
               !(type.Namespace ?? "").StartsWith("SDL", StringComparison.Ordinal) &&
               !(type.Namespace ?? "").StartsWith("Swealium.Native", StringComparison.Ordinal), $"Backend type leaked: {type}");
         foreach (var argument in type.GetGenericArguments()) ValidateType(argument);

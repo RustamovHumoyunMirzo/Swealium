@@ -14,6 +14,8 @@ Every exported widget is documented here, including the abstract base. Each page
 | [Button](button.md) | Widget | Pointer/keyboard activation and shaped caption |
 | [Text](text.md) | Widget | Shaped paragraphs, bidi, wrapping, styled HTML text |
 | [TextBox](text-box.md) | Widget | Plain-text editing, selection, clipboard, history, preedit and candidates |
+| [Image](image.md) | Widget | Raster bitmaps, cropping, interpolation, aspect-preserving scaling |
+| [VectorGraphics](vector-graphics.md) | Widget | Static SVG/SVGZ and recorded vector display |
 
 WidgetCollection, GridTrack/Collection, ScrollBarStyle/Info, and layout enums are supporting APIs rather than widgets. Their contracts are linked from the relevant pages. The API generator verifies that every exported Widget subclass has a page here, preventing undocumented widget additions.
 

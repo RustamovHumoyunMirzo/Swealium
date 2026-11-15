@@ -4,6 +4,8 @@
 
 Namespace: Swealium.Graphics. These types expose no Skia objects.
 
+Bitmap, VectorImage, VectorPath, image scaling/interpolation, and their DrawingContext methods have dedicated [media contracts](media.md).
+
 ## Coordinate and color records
 
 | Type / constructor | Members | Contract |
@@ -72,5 +74,5 @@ All coordinates/radii/stroke/font sizes are logical units, already scaled by the
 
 The current backend uses antialiased CPU drawing and internal HarfBuzz paragraph shaping, bidi, wrapping, and font fallback. The default style requests a system typeface; glyph coverage depends on installed fonts. [Text contracts](text.md) describe the complete text API.
 
-The supplied implementation throws ObjectDisposedException when used after its callback scope. There is no public Dispose, native canvas, save/restore/transform, image, or path API. Implementing a different DrawingContext does not automatically replace a window's internal backend; no backend injection API is currently exposed.
+The supplied implementation throws ObjectDisposedException when used after its callback scope. Bitmap/vector/path drawing is exposed through Swealium-owned media APIs; there is no public drawing-context Dispose, native canvas, or general save/restore/transform stack. Implementing a different DrawingContext does not automatically replace a window's internal backend; no backend injection API is currently exposed.
 
