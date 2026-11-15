@@ -10,8 +10,17 @@ public abstract class DrawingContext
     public abstract void StrokeRectangle(Rect bounds, Color color, CornerRadii radii, float thickness = 1);
     public abstract void FillEllipse(Rect bounds, Color color);
     public abstract void DrawLine(Point start, Point end, Color color, float thickness = 1);
-    /// <summary>Draw single-line text at a baseline origin. Complex text shaping is not yet supported.</summary>
+    /// <summary>Draw shaped text at a baseline origin.</summary>
     public abstract void DrawText(string text, Point baseline, Color color, float fontSize = 16);
     public abstract Size MeasureText(string text, float fontSize = 16);
+    public virtual void DrawTextLayout(TextLayout layout, Point origin, TextSelection? selection = null, Color? selectionColor = null, Rect? clip = null) =>
+        throw new NotSupportedException("This drawing context does not implement shaped paragraphs.");
+    public void DrawText(string text, Rect bounds, TextStyle? style = null, TextOptions? options = null, TextMarkup markup = TextMarkup.Plain)
+    {
+        options ??= new();
+        using var layout = new TextLayout(text, style, options, bounds.Width, markup);
+        float y = options.VerticalAlignment switch { TextVerticalAlignment.Center => (bounds.Height-layout.Size.Height)/2, TextVerticalAlignment.Bottom => bounds.Height-layout.Size.Height, _ => 0 };
+        DrawTextLayout(layout, new(bounds.X, bounds.Y + y), clip: bounds);
+    }
 }
 

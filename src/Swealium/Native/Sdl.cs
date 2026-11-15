@@ -100,6 +100,15 @@ internal static partial class Sdl
         [FieldOffset(24)] public nint Text64;
         [FieldOffset(20)] public nint Text32;
         public readonly nint Text => IntPtr.Size == 8 ? Text64 : Text32;
+        [FieldOffset(32)] public int EditStart64;
+        [FieldOffset(24)] public int EditStart32;
+        [FieldOffset(36)] public int EditLength64;
+        [FieldOffset(28)] public int EditLength32;
+        [FieldOffset(40)] public byte CandidatesHorizontal64;
+        [FieldOffset(32)] public byte CandidatesHorizontal32;
+        public readonly int EditStart => IntPtr.Size == 8 ? EditStart64 : EditStart32;
+        public readonly int EditLength => IntPtr.Size == 8 ? EditLength64 : EditLength32;
+        public readonly bool CandidatesHorizontal => (IntPtr.Size == 8 ? CandidatesHorizontal64 : CandidatesHorizontal32) != 0;
     }
 
     internal static void Check(bool success)

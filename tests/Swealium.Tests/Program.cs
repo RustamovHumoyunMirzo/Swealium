@@ -45,6 +45,11 @@ Run("grid constrained fractions and extreme weights", GridTests.Constraints);
 Run("grid dependent measurement, nesting, and invalidation", GridTests.Measurement);
 Run("grid collection ownership and invalid arguments", GridTests.OwnershipAndValidation);
 Run("grid cell rendering, hit testing, z order, and resize", GridTests.RenderingAndResize);
+Run("wrap boundaries, orientation, gaps, and weighted allocation", TextTests.Flow);
+Run("shaping, bidi, wrapping, fallback, HTML, and UTF-16 indices", TextTests.Shaping);
+Run("grapheme editing, selection, undo, read-only, and IME commit", TextTests.Editing);
+Run("native IME decoding, candidate ownership, clipboard, and rendering", TextTests.NativeIme);
+Run("shaped text, preedit, and candidate raster rendering", TextTests.Rendering);
 Console.WriteLine($"{result.Passed} passed; {result.Failed} failed.");
 return result.Failed == 0 ? 0 : 1;
 
@@ -245,6 +250,9 @@ static void PublicApi()
     {
         if (type.IsByRef || type.IsArray || type.IsPointer) { ValidateType(type.GetElementType()!); return; }
         Check(!(type.Namespace ?? "").StartsWith("SkiaSharp", StringComparison.Ordinal) &&
+              !(type.Namespace ?? "").StartsWith("Topten", StringComparison.Ordinal) &&
+              !(type.Namespace ?? "").StartsWith("HarfBuzzSharp", StringComparison.Ordinal) &&
+              !(type.Namespace ?? "").StartsWith("AngleSharp", StringComparison.Ordinal) &&
               !(type.Namespace ?? "").StartsWith("SDL", StringComparison.Ordinal) &&
               !(type.Namespace ?? "").StartsWith("Swealium.Native", StringComparison.Ordinal), $"Backend type leaked: {type}");
         foreach (var argument in type.GetGenericArguments()) ValidateType(argument);

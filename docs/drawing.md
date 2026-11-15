@@ -6,7 +6,7 @@
 
 ## Logical units and frame scope
 
-DrawingContext is provided to Widget.Draw and window Paint. It supports filled/stroked rectangles, ellipses, lines, single-line text, and text measurement. All positions, dimensions, radii, font sizes, and stroke widths use logical units.
+DrawingContext is provided to Widget.Draw and window Paint. It supports filled/stroked rectangles, ellipses, lines, shaped text paragraphs, and text measurement. All positions, dimensions, radii, font sizes, and stroke widths use logical units.
 
 The backend scales the window's logical client size into its physical drawable size. Do not multiply drawing coordinates or pointer coordinates by PixelDensity yourself. Background Paint runs before the visual tree. A widget's context is already translated into local coordinates and clipped according to its rounded bounds and ancestors.
 
@@ -39,7 +39,7 @@ Widget.Radii clips the entire widget subtree by default. A custom widget should 
 
 ## Text
 
-DrawText uses a baseline origin, not a top-left text origin. MeasureText returns advance width and a font ascent/descent height. It uses a system default typeface and does not provide line wrapping, font-family selection, complex shaping, or per-glyph fallback APIs.
+The Point overload of DrawText uses a baseline origin and unwrapped shaped text. The Rect overload uses top-left paragraph bounds, wrapping, clipping, alignment, TextStyle, and optional HTML markup. MeasureText returns unwrapped shaped dimensions. TextLayout supplies context-independent measurement, hit testing, and caret geometry; dispose it after use. See [text and editing](text.md) for shaping, bidi, fallback, styles, HTML support, and editable widgets.
 
 Button measures its text intrinsically and adds padding; custom text widgets may override MeasureContent using their own size data. The public drawing API does not provide a context outside a frame, so do not try to retain one for measurement during later layout.
 

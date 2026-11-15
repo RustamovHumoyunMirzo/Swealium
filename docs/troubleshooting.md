@@ -42,7 +42,7 @@ This is different from a missing native-library error: SDL loaded successfully b
 
 ## Shapes render but text is blank
 
-The default system typeface may be unavailable. Install fonts and fontconfig on Linux. The package uses the fontconfig-enabled Skia native assets. Complex shaping and custom family/fallback selection are not provided by the public text API yet.
+The default system typeface may be unavailable. Install fonts and fontconfig on Linux. The package uses fontconfig-enabled Skia native assets and internal HarfBuzz shaping. TextStyle.FontFamily requests a family; system fallback still requires fonts containing the desired glyphs. See [text](text.md) for style and IME limitations.
 
 ## Window controls throw or appear delayed
 

@@ -57,6 +57,7 @@ public static class SwealiumApplication
         try
         {
             Sdl.SDL_SetMainReady();
+            _ = Sdl.SDL_SetHint("SDL_IME_IMPLEMENTED_UI", "composition,candidates");
             Sdl.Check(Sdl.SDL_Init(0x20));
             initialized = true;
             SynchronizationContext.SetSynchronizationContext(session);

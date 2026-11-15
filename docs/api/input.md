@@ -78,5 +78,5 @@ KeyModifiers is a flags enum: None=0, Shift=1, Control=2, Alt=4, Super=8, CapsLo
 
 Constructor: TextInputEvent(string text). Read-only Text contains committed Unicode text. Native decoding copies the UTF-8 payload into a managed string before polling another event. The constructor itself is a simple data carrier and does not sanitize arbitrary manually supplied strings.
 
-A focused widget must set AcceptsTextInput=true. Native text-service activation is synchronized with that opt-in. IME preedit, composition selection/candidates, and editor behavior are not exposed yet.
+A focused widget must set AcceptsTextInput=true. Native text-service activation and TextInputArea placement are synchronized with that opt-in. CompositionInput/CandidatesInput, TextCompositionEvent/TextCandidatesEvent, and InputManager.ProcessComposition/ProcessCandidates supply preedit/candidate routing; see [text contracts](text.md) for ranges, validation, ownership, and editor behavior.
 

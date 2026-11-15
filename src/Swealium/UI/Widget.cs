@@ -13,6 +13,8 @@ public abstract class Widget
     private Rect layoutBounds;
     private bool measureValid;
     private Size lastMeasureConstraint;
+    private bool lastForceWidth, lastForceHeight;
+    private WeightBasis weightBasis;
     private SizingMode widthSizing, heightSizing;
     private int gridRow, gridColumn, gridRowSpan = 1, gridColumnSpan = 1;
     /// <summary>Offsets used by an Absolute container.</summary>
@@ -47,6 +49,13 @@ public abstract class Widget
     public Alignment? VerticalAlignment { get => verticalAlignment; set { verticalAlignment = value; InvalidateLayout(); } }
     /// <summary>Relative share of spare space along the parent's stack axis.</summary>
     public float Grow { get => grow; set { ValidateLength(value); grow = value; InvalidateLayout(); } }
+    /// <summary>Stack/wrap weight. An alias for Grow; use WeightBasis.Zero for equal-share cells independent of content.</summary>
+    public float Weight { get => Grow; set => Grow = value; }
+    public WeightBasis WeightBasis
+    {
+        get => weightBasis;
+        set { if (!Enum.IsDefined(value)) throw new ArgumentOutOfRangeException(nameof(value)); weightBasis = value; InvalidateLayout(); }
+    }
     public int ZIndex { get; set; }
     public CornerRadii Radii { get; set; }
     public bool ClipToBounds { get; set; } = true;
@@ -56,6 +65,8 @@ public abstract class Widget
     public bool IsFocusable { get; set; }
     /// <summary>Opt in to Unicode text events and the platform text input service when focused.</summary>
     public bool AcceptsTextInput { get; set; }
+    /// <summary>Local logical rectangle used to anchor native input-method UI.</summary>
+    public virtual Rect TextInputArea => ContentBounds;
     public bool IsFocused { get; internal set; }
     public bool IsPointerOver { get; internal set; }
     public Container? Parent { get; internal set; }
@@ -71,22 +82,24 @@ public abstract class Widget
         Math.Max(0, ActualWidth - Padding.Horizontal), Math.Max(0, ActualHeight - Padding.Vertical));
 
     public void InvalidateLayout() { layoutDirty = true; measureValid = false; Parent?.InvalidateLayout(); }
-    public void Measure(Size available)
+    public void Measure(Size available) => MeasureAllocated(available, false, false);
+    internal void MeasureAllocated(Size available, bool forceWidth, bool forceHeight)
     {
         LayoutEngine.ValidateSize(available, true);
-        if (measureValid && lastMeasureConstraint == available) return;
+        if (measureValid && lastMeasureConstraint == available && lastForceWidth == forceWidth && lastForceHeight == forceHeight) return;
         measureValid = false;
-        if (!IsVisible) { DesiredSize = default; lastMeasureConstraint = available; measureValid = true; return; }
-        float availableWidth = Constrain(float.IsNaN(Width) ? Math.Max(0, available.Width - Margin.Horizontal) : Width, MinWidth, MaxWidth);
-        float availableHeight = Constrain(float.IsNaN(Height) ? Math.Max(0, available.Height - Margin.Vertical) : Height, MinHeight, MaxHeight);
+        if (!IsVisible) { DesiredSize = default; lastMeasureConstraint = available; lastForceWidth = forceWidth; lastForceHeight = forceHeight; measureValid = true; return; }
+        float availableWidth = Constrain(forceWidth || float.IsNaN(Width) ? Math.Max(0, available.Width - Margin.Horizontal) : Width, MinWidth, MaxWidth);
+        float availableHeight = Constrain(forceHeight || float.IsNaN(Height) ? Math.Max(0, available.Height - Margin.Vertical) : Height, MinHeight, MaxHeight);
         Size content = MeasureContent(new(Math.Max(0, availableWidth - Padding.Horizontal), Math.Max(0, availableHeight - Padding.Vertical)));
         LayoutEngine.ValidateSize(content, false);
         DesiredSize = new(
-            Constrain(WidthSizing == SizingMode.Fill && float.IsFinite(available.Width) ? availableWidth :
+            Constrain((forceWidth || WidthSizing == SizingMode.Fill) && float.IsFinite(available.Width) ? availableWidth :
                 float.IsNaN(Width) ? content.Width + Padding.Horizontal : Width, MinWidth, MaxWidth) + Margin.Horizontal,
-            Constrain(HeightSizing == SizingMode.Fill && float.IsFinite(available.Height) ? availableHeight :
+            Constrain((forceHeight || HeightSizing == SizingMode.Fill) && float.IsFinite(available.Height) ? availableHeight :
                 float.IsNaN(Height) ? content.Height + Padding.Vertical : Height, MinHeight, MaxHeight) + Margin.Vertical);
         lastMeasureConstraint = available;
+        lastForceWidth = forceWidth; lastForceHeight = forceHeight;
         measureValid = true;
     }
     protected virtual Size MeasureContent(Size available) => default;
@@ -130,6 +143,8 @@ public abstract class Widget
     public event Action<PointerEvent>? PointerInput;
     public event Action<KeyEvent>? KeyboardInput;
     public event Action<TextInputEvent>? TextInput;
+    public event Action<TextCompositionEvent>? CompositionInput;
+    public event Action<TextCandidatesEvent>? CandidatesInput;
     public event Action? FocusChanged;
 
     public abstract void Draw(DrawingContext context);
@@ -154,10 +169,14 @@ public abstract class Widget
     }
     protected virtual void OnKeyboardInput(KeyEvent e) { }
     protected virtual void OnTextInput(TextInputEvent e) { }
+    protected virtual void OnCompositionInput(TextCompositionEvent e) { }
+    protected virtual void OnCandidatesInput(TextCandidatesEvent e) { }
     protected virtual void OnFocusChanged() { }
     internal void RaisePointer(PointerEvent e) { OnPointerInput(e); PointerInput?.Invoke(e); }
     internal void RaiseKey(KeyEvent e) { OnKeyboardInput(e); KeyboardInput?.Invoke(e); }
     internal void RaiseText(TextInputEvent e) { OnTextInput(e); TextInput?.Invoke(e); }
+    internal void RaiseComposition(TextCompositionEvent e) { OnCompositionInput(e); CompositionInput?.Invoke(e); }
+    internal void RaiseCandidates(TextCandidatesEvent e) { OnCandidatesInput(e); CandidatesInput?.Invoke(e); }
     internal void RaiseFocus() { OnFocusChanged(); FocusChanged?.Invoke(); }
     internal bool IsInteractable => IsVisible && IsEnabled && (Parent?.IsInteractable ?? true);
     internal Point ToLocal(Point point)

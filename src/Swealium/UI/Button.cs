@@ -28,10 +28,8 @@ public class Button : Widget
         if (IsFocused && ActualWidth > 2 && ActualHeight > 2)
             context.StrokeRectangle(new(1, 1, ActualWidth - 2, ActualHeight - 2), Color.White,
                 Radii.Normalize(new(ActualWidth, ActualHeight)).Inset(1), 2);
-        Size text = context.MeasureText(Text, FontSize);
-        Rect content = ContentBounds;
-        context.DrawText(Text, new(content.X + (content.Width - text.Width) / 2,
-            content.Y + (content.Height + FontSize * 0.7f) / 2), Foreground, FontSize);
+        context.DrawText(Text, ContentBounds, new TextStyle { Foreground = Foreground, FontSize = FontSize },
+            new TextOptions { Wrapping = TextWrapping.None, Alignment = TextAlignment.Center, VerticalAlignment = TextVerticalAlignment.Center });
     }
     protected override Size MeasureContent(Size available)
     {

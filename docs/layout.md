@@ -46,6 +46,38 @@ Padding belongs inside the widget. Margin belongs outside it. Gap separates visi
 
 Stacks measure with unbounded space on their main axis and available space on the cross axis. They do not wrap. Hidden children contribute neither space nor gaps; disabled children keep their space.
 
+For wrapping use `WrapContainer`, described below. Weighted stack children are remeasured at their allocated finite main-axis size so text wrapping can update the cross-axis height.
+
+## Wrapping at a boundary
+
+![Wrapping lines and weighted shares](images/wrap-weight.svg)
+
+```csharp
+var flow = new WrapContainer { Gap = 8, LineGap = 12, Padding = new(16) };
+foreach (string caption in new[] { "One", "Another item", "Three", "Four" })
+    flow.Children.Add(new Button { Text = caption });
+root.Children.Add(flow);
+```
+
+Direction defaults to Horizontal: items occupy a row until adding an item and its gap would exceed available content width. The next item begins a row. Vertical flows down columns and wraps at available content height. An oversized item occupies its own line and can overflow according to ordinary clipping. An unbounded main axis makes one line. Padding reduces the boundary; margins participate in item lengths. Equal-to-boundary items fit (within a small floating-point tolerance).
+
+`Gap` separates items; nullable `LineGap` separates rows/columns and defaults to Gap. Hidden children consume neither gaps nor lines. Insertion order controls flow; ZIndex only affects painting/hit testing. Content alignment positions the group of lines and each line's items; inherited cross-axis alignment applies within a line. `LineCount` and read-only `Lines` report the last arrangement in local coordinates. Use Direction on WrapContainer; its inherited Layout property does not control wrapping.
+
+## Proportional weight
+
+`Weight` is an alias of the existing `Grow` property. A positive weight participates in spare-space allocation along a stack's main axis, or separately within each wrap line. It is finite and nonnegative; zero does not participate. WeightBasis defaults to Content, which adds a weighted share to measured content. WeightBasis.Zero starts from the minimum dimension plus margins, making equal weights equal size when minimum/maximum constraints are equal, regardless of caption length.
+
+```csharp
+var row = new Container { Layout = LayoutMode.Horizontal, Gap = 10 };
+row.Children.Add(new Button { Text = "1 share", Weight = 1, WeightBasis = WeightBasis.Zero });
+row.Children.Add(new Button { Text = "2 shares", Weight = 2, WeightBasis = WeightBasis.Zero });
+// At 310 units wide: after the gap, 100 and 200 units.
+```
+
+The allocator subtracts bases, margins, and gaps, then distributes positive remaining space by relative weights. Capped children stop at MaxWidth/MaxHeight and leftover space redistributes. There is no negative-space shrinking; oversized content may overflow. With an unbounded main axis, weight does not expand and Zero falls back to intrinsic content. Overlay, absolute layout, and Grid do not apply widget weights; Grid has fractional tracks instead.
+
+Wrap boundaries are determined from intrinsic bases before per-line expansion. Zero-basis items may share a line regardless of their caption's natural width; set minimum sizes to establish useful wrap boundaries. Weighted children are remeasured at allocated lengths before determining line cross sizes.
+
 Gap and Grow do not affect Overlay/Absolute. X/Y only affect Absolute. For overlap use Overlay or Absolute plus ZIndex, rather than negative margins.
 
 For two-dimensional rows, columns, and spans, use [Grid](grid.md), a separate Container subclass. Its inherited Layout property does not switch away from grid arrangement.

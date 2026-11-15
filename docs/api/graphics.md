@@ -58,11 +58,13 @@ Abstract frame-scoped interface. Protected default constructor supports backend 
 | FillEllipse(Rect bounds, Color color) | Abstract filled ellipse within bounds |
 | DrawLine(Point start, Point end, Color color, float thickness = 1) | Abstract stroked line |
 | DrawText(string text, Point baseline, Color color, float fontSize = 16) | Abstract single-line text at a baseline |
-| MeasureText(string text, float fontSize = 16) | Abstract Size: advance width and font ascent/descent height |
+| MeasureText(string text, float fontSize = 16) | Abstract Size: unwrapped shaped dimensions |
+| DrawText(string, Rect, TextStyle?, TextOptions?, TextMarkup) | Top-left paragraph, alignment, wrapping, and clipping |
+| DrawTextLayout(TextLayout, Point, TextSelection?, Color?, Rect?) | Caller-owned shaped layout, optional selection and clipping |
 
 All coordinates/radii/stroke/font sizes are logical units, already scaled by the backend. Do not apply window pixel density again. Use finite positive stroke/font sizes; nonpositive values are rejected by the current backend, but not every nonfinite primitive input is explicitly guarded.
 
-The current backend uses antialiased CPU Skia drawing, a default system typeface, and no shaping/wrapping API. Text can contain Unicode but glyph availability and correct complex-script shaping are not guaranteed.
+The current backend uses antialiased CPU drawing and internal HarfBuzz paragraph shaping, bidi, wrapping, and font fallback. The default style requests a system typeface; glyph coverage depends on installed fonts. [Text contracts](text.md) describe the complete text API.
 
-The supplied implementation throws ObjectDisposedException when used after its callback scope. There is no public Dispose, native canvas, save/restore/transform, image, path, or font-family API. Implementing a different DrawingContext does not automatically replace a window's internal backend; no backend injection API is currently exposed.
+The supplied implementation throws ObjectDisposedException when used after its callback scope. There is no public Dispose, native canvas, save/restore/transform, image, or path API. Implementing a different DrawingContext does not automatically replace a window's internal backend; no backend injection API is currently exposed.
 

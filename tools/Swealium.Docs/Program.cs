@@ -24,6 +24,7 @@ foreach (Type type in types)
     text.AppendLine($"## {type.FullName}").AppendLine();
     string contract = type.Namespace switch
     {
+        _ when type.Name.StartsWith("Text", StringComparison.Ordinal) || type.Name == "Clipboard" => "text.md",
         "Swealium.Graphics" => "graphics.md",
         "Swealium.UI" when type.Name.StartsWith("Grid", StringComparison.Ordinal) => "grid.md",
         "Swealium.UI" => "widgets.md",

@@ -31,4 +31,9 @@ jobs:
         env:
           SDL_VIDEO_DRIVER: dummy
           SDL_RENDER_DRIVER: software
+      - name: Render shaped text and editor demo
+        run: dotnet run --project samples/Swealium.Sample -c Release --no-build -- --text-demo --smoke-test
+        env:
+          SDL_VIDEO_DRIVER: dummy
+          SDL_RENDER_DRIVER: software
       - run: dotnet pack src/Swealium -c Release --no-build -o artifacts

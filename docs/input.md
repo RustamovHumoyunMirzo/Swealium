@@ -59,7 +59,7 @@ widget.TextInput += e => Console.WriteLine(e.Text);
 window.Input.Focus(widget);
 ```
 
-Native text input starts when a focused widget opts in and stops when that focus is removed. The API handles committed UTF-8 text, copied before the next native poll. It does not yet expose IME preedit/candidate updates or a built-in text editor.
+Native text input starts when a focused widget opts in and stops when that focus is removed. Committed UTF-8, IME preedit, and candidate snapshots are copied before the next native poll. TextCompositionEvent uses UTF-16 offsets, converted from native character positions. TextCandidatesEvent carries a read-only list, selected index, and orientation. InputManager routes these through focused text clients. Widget.TextInputArea anchors native UI; TextBox supplies its scrolled caret geometry. See [text editing and IME](text.md).
 
 ## Synthetic input and hosts
 

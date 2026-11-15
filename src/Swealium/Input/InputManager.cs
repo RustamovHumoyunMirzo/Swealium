@@ -27,6 +27,8 @@ public sealed class InputManager
     public Widget? FocusedWidget { get; private set; }
     public Widget? CapturedWidget => captured;
     internal event Action? FocusChanged;
+    internal event Action? CompositionCancellationRequested;
+    internal void CancelNativeComposition() => CompositionCancellationRequested?.Invoke();
     internal Func<bool>? CanProcessInput { get; set; }
 
     public Widget? HitTest(Point point)
@@ -61,6 +63,7 @@ public sealed class InputManager
         if (widget is not null && (!widget.IsFocusable || !IsAttached(widget))) return false;
         if (ReferenceEquals(FocusedWidget, widget)) return true;
         Widget? previous = FocusedWidget;
+        if (previous?.AcceptsTextInput == true) CancelNativeComposition();
         FocusedWidget = widget;
         if (previous is not null) { previous.IsFocused = false; previous.RaiseFocus(); }
         if (widget is not null) { widget.IsFocused = true; widget.RaiseFocus(); }
@@ -136,6 +139,20 @@ public sealed class InputManager
         Validate();
         if (FocusedWidget is { AcceptsTextInput: true } focused)
             Route(focused, e, widget => widget.RaiseText(e));
+    }
+    public void ProcessComposition(TextCompositionEvent e)
+    {
+        ArgumentNullException.ThrowIfNull(e);
+        if (CanProcessInput?.Invoke() == false) return;
+        Validate();
+        if (FocusedWidget is { AcceptsTextInput: true } focused) Route(focused, e, widget => widget.RaiseComposition(e));
+    }
+    public void ProcessCandidates(TextCandidatesEvent e)
+    {
+        ArgumentNullException.ThrowIfNull(e);
+        if (CanProcessInput?.Invoke() == false) return;
+        Validate();
+        if (FocusedWidget is { AcceptsTextInput: true } focused) Route(focused, e, widget => widget.RaiseCandidates(e));
     }
     private static void CollectFocusable(Widget widget, List<Widget> result)
     {

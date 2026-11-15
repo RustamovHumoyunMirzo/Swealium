@@ -49,12 +49,28 @@ public class Container : Widget
             }
             count++;
         }
+        if (Layout is LayoutMode.Vertical or LayoutMode.Horizontal)
+        {
+            bool vertical = Layout == LayoutMode.Vertical;
+            float main = vertical ? available.Height : available.Width;
+            var children = Children.Where(child => child.IsVisible).ToArray();
+            if (float.IsFinite(main) && children.Any(child => child.Weight > 0))
+            {
+                float[] lengths = LayoutWeights.Allocate(children, main, Gap, vertical);
+                for (int i = 0; i < children.Length; i++)
+                    if (children[i].Weight > 0)
+                        children[i].MeasureAllocated(vertical ? new(available.Width, lengths[i]) : new(lengths[i], available.Height), !vertical, vertical);
+                width = vertical ? children.Select(child => child.DesiredSize.Width).DefaultIfEmpty().Max() : lengths.Sum();
+                height = vertical ? lengths.Sum() : children.Select(child => child.DesiredSize.Height).DefaultIfEmpty().Max();
+            }
+        }
         if (Layout == LayoutMode.Vertical) height += Gap * Math.Max(0, count - 1);
         if (Layout == LayoutMode.Horizontal) width += Gap * Math.Max(0, count - 1);
         return new(width, height);
     }
     protected override void ArrangeContent(Rect area)
     {
+        if (Layout is LayoutMode.Vertical or LayoutMode.Horizontal) _ = MeasureContent(new(area.Width, area.Height));
         foreach (var hidden in Children.Where(child => !child.IsVisible))
             hidden.ArrangeSlot(new(area.X, area.Y, 0, 0), Alignment.Start, Alignment.Start);
         var children = Children.Where(child => child.IsVisible).ToArray();
@@ -70,32 +86,8 @@ public class Container : Widget
             return;
         }
         bool vertical = Layout == LayoutMode.Vertical;
-        float[] lengths = children.Select(child =>
-            (vertical ? child.HeightSizing : child.WidthSizing) == SizingMode.Fill
-                ? child.FillOuterLength(vertical ? area.Height : area.Width, vertical)
-                : vertical ? child.DesiredSize.Height : child.DesiredSize.Width).ToArray();
+        float[] lengths = LayoutWeights.Allocate(children, vertical ? area.Height : area.Width, Gap, vertical);
         float gaps = Gap * Math.Max(0, children.Length - 1);
-        float free = Math.Max(0, (vertical ? area.Height : area.Width) - lengths.Sum() - gaps);
-        // Redistribute unused shares when a growing child reaches its max size.
-        var growing = Enumerable.Range(0, children.Length).Where(i => children[i].Grow > 0).ToList();
-        while (free > 0.001f && growing.Count > 0)
-        {
-            double weightScale = growing.Max(i => children[i].Grow);
-            double weightSum = growing.Sum(i => children[i].Grow / weightScale);
-            float before = free, distributed = 0;
-            foreach (int i in growing.ToArray())
-            {
-                Widget child = children[i];
-                float maximum = vertical ? Math.Max(child.MinHeight, child.MaxHeight) + child.Margin.Vertical
-                    : Math.Max(child.MinWidth, child.MaxWidth) + child.Margin.Horizontal;
-                float amount = Math.Min(Math.Max(0, maximum - lengths[i]), (float)(before * (child.Grow / weightScale) / weightSum));
-                lengths[i] += amount;
-                distributed += amount;
-                if (maximum - lengths[i] <= 0.001f) growing.Remove(i);
-            }
-            free = Math.Max(0, free - distributed);
-            if (distributed <= 0.001f) break;
-        }
         float remaining = (vertical ? area.Height : area.Width) - lengths.Sum() - gaps;
         float cursor = (vertical ? area.Y : area.X) + LayoutEngine.Offset(remaining, vertical ? VerticalContentAlignment : HorizontalContentAlignment);
         for (int i = 0; i < children.Length; i++)

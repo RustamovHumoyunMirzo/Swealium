@@ -53,15 +53,21 @@ internal sealed class SkiaDrawingContext(SKCanvas canvas) : DrawingContext
     {
         Verify();
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(fontSize);
-        using var font = new SKFont(SKTypeface.Default, fontSize);
-        using var paint = Paint(color);
-        canvas.DrawText(text, baseline.X, baseline.Y, SKTextAlign.Left, font, paint);
+        using var layout = new TextLayout(text, new() { Foreground = color, FontSize = fontSize }, new() { Wrapping = TextWrapping.None });
+        layout.Paint(canvas, new(baseline.X, baseline.Y - layout.Baseline), null, null);
     }
     public override Size MeasureText(string text, float fontSize = 16)
     {
         Verify();
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(fontSize);
         return TextMetrics.Measure(text, fontSize);
+    }
+    public override void DrawTextLayout(TextLayout layout, Point origin, TextSelection? selection = null, Color? selectionColor = null, Rect? clip = null)
+    {
+        Verify(); ArgumentNullException.ThrowIfNull(layout);
+        int save = canvas.Save();
+        try { if (clip is { } bounds) canvas.ClipRect(ToRect(bounds)); layout.Paint(canvas, origin, selection, selectionColor); }
+        finally { canvas.RestoreToCount(save); }
     }
 }
 

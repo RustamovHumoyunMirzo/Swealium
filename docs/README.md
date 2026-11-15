@@ -20,6 +20,7 @@ Documentation for **0.1.0-alpha.1 / .NET 10**. This describes the implemented AP
 | [Grid](grid.md) | Fixed/content/fraction tracks, cell placement, spans, implicit tracks, row/column limits |
 | [Input](input.md) | Hit regions, routing, capture, focus, keyboard activation, Unicode |
 | [Drawing](drawing.md) | Logical units, frame-scoped context, shapes, text, radii, DPI |
+| [Text and editing](text.md) | Shaping, bidi, HTML text markup, Text/TextBox, selection, clipboard, IME preedit/candidates |
 | [Custom widgets](custom-widgets.md) | Intrinsic measurement, drawing, event overrides, custom containers |
 | [Native interop](native-interop.md) | Portable routing IDs versus borrowed OS handles, window-system kinds, ownership |
 | [Platform and deployment](platforms.md) | Native dependencies, target coverage, workloads, packaging, reproducibility |
@@ -35,6 +36,7 @@ The curated contract pages explain defaults, parameters, results, exceptions, th
 - [Widgets and layout contracts](api/widgets.md)
 - [Grid contracts](api/grid.md)
 - [Graphics and value-type contracts](api/graphics.md)
+- [Text, editing, composition, and clipboard contracts](api/text.md)
 - [Input contracts and enums](api/input.md)
 - [Complete public/protected signatures](api/reference.md)
 
@@ -42,7 +44,7 @@ Inherited widget members are documented once on Widget. WidgetCollection also in
 
 ## Current boundaries
 
-Desktop windowing, stack/grid layout, drawing, input, multi-window ownership, and dialogs are implemented. Windows x64 has local native runtime verification; Linux/macOS CI is configured but requires target runtime verification for changes. iOS/Android native lifecycle hosts are **not implemented**. There is no wrapping layout, scrolling control, text-editing control, complex text shaping, IME preedit/candidate UI, multiple-pointer API, accessibility bridge, or GPU Skia backend.
+Desktop windowing, stack/grid/wrap layout, weighted allocation, shaped text, formatted HTML text, plain-text editing, IME event/preedit/candidate rendering, multi-window ownership, and dialogs are implemented. Windows x64 has local native runtime verification; Linux/macOS CI is configured but requires target runtime verification for changes. Interactive IMEs require manual OS/provider testing. iOS/Android native lifecycle hosts are **not implemented**. There is no standalone scrolling container, multiple-pointer API, accessibility bridge, or GPU Skia backend.
 
 Examples in the guides use Swealium-owned public types. The backend's Skia and SDL classes remain internal. Native interop deliberately exposes only a borrowed OS handle descriptor, never an SDL_Window pointer.
 

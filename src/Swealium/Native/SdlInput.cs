@@ -24,6 +24,19 @@ internal static class SdlInput
             case 0x301:
                 input.ProcessKey(new(MapKey(e.ScanCode), e.Type == 0x300, Modifiers(e.Modifiers), e.Repeat != 0));
                 break;
+            case 0x302:
+                string composition = Marshal.PtrToStringUTF8(e.Text) ?? "";
+                int start = Utf16Offset(composition, Math.Max(0, e.EditStart));
+                int end = Utf16Offset(composition, (int)Math.Min(int.MaxValue, (long)Math.Max(0, e.EditStart) + Math.Max(0, e.EditLength)));
+                input.ProcessComposition(new(composition, start, end - start));
+                break;
+            case 0x304:
+                int count = e.Text == 0 ? 0 : Math.Clamp(e.EditStart, 0, 65536);
+                var candidates = new string[count];
+                for (int i = 0; i < count; i++) candidates[i] = Marshal.PtrToStringUTF8(Marshal.ReadIntPtr(e.Text, i * IntPtr.Size)) ?? "";
+                int selected = e.EditLength >= 0 && e.EditLength < count ? e.EditLength : -1;
+                input.ProcessCandidates(new(candidates, selected, e.CandidatesHorizontal));
+                break;
             case 0x303:
                 // SDL owns this pointer; copy UTF-8 before polling another event.
                 input.ProcessText(new(Marshal.PtrToStringUTF8(e.Text) ?? string.Empty));
@@ -31,6 +44,12 @@ internal static class SdlInput
             case 0x20d: input.ProcessPointer(new(PointerEventKind.Leave, default)); break;
             case 0x20f: input.Cancel(); break;
         }
+    }
+    private static int Utf16Offset(string text, int characters)
+    {
+        int offset = 0;
+        foreach (var rune in text.EnumerateRunes()) { if (characters-- <= 0) break; offset += rune.Utf16SequenceLength; }
+        return offset;
     }
     private static PointerButton Button(byte button) => button switch
     {

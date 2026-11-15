@@ -20,11 +20,15 @@ The library targets net10.0 and pins:
 
 | Package | Version | Purpose |
 | --- | --- | --- |
-| SkiaSharp | 3.119.4 | Managed raster drawing and platform native references |
-| SkiaSharp.NativeAssets.Linux | 3.119.4 | Fontconfig-enabled Linux renderer |
+| SkiaSharp | 4.153.1 | Managed raster drawing and platform native references |
+| SkiaSharp.NativeAssets.Linux | 4.153.1 | Fontconfig-enabled Linux renderer |
+| Topten.RichTextKit | 0.6.173 | Paragraph shaping, bidi, wrapping, fallback, and caret geometry (Apache-2.0) |
+| AngleSharp | 1.10.3 | HTML text parsing without resource loaders/scripts (MIT) |
 | ppy.SDL3-CS | 2026.1002.1 | SDL3 family package/native assets |
 
 Swealium's public API does not require using backend types. Package references remain transitive so runtime assets can resolve. Replacing native binaries independently can break ABI/version assumptions.
+
+RichTextKit brings SkiaSharp.HarfBuzz 4.153.1 and HarfBuzzSharp.NativeAssets.Linux 14.2.1.301 transitively. Publish for a concrete RID and include the corresponding native assets. Third-party terms remain applicable: [RichTextKit](https://github.com/toptensoftware/RichTextKit), [AngleSharp](https://github.com/AngleSharp/AngleSharp), [SkiaSharp](https://github.com/mono/SkiaSharp), and [SDL](https://github.com/libsdl-org/SDL). Fonts are supplied by the deployment environment; no fonts are bundled by Swealium.
 
 Linux requires a graphical display backend and its dependencies. System default text needs fontconfig and installed fonts. Headless tests use SDL_VIDEO_DRIVER=dummy and SDL_RENDER_DRIVER=software; this does not validate compositor behavior, focus activation, real message-box presentation, or every window-manager control.
 

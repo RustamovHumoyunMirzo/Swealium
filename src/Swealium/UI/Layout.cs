@@ -5,6 +5,8 @@ public enum Alignment { Start, Center, End, Stretch }
 public enum LayoutMode { Vertical, Horizontal, Overlay, Absolute }
 /// <summary>Automatic preserves numeric/NaN sizing; Content keeps intrinsic size; Fill occupies the allocated parent slot.</summary>
 public enum SizingMode { Automatic, Content, Fill }
+public enum WeightBasis { Content, Zero }
+public enum FlowDirection { Horizontal, Vertical }
 
 /// <summary>Runs measure/arrange in logical units. Windows invoke this automatically before input and rendering.</summary>
 public static class LayoutEngine

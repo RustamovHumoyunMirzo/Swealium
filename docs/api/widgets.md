@@ -74,6 +74,8 @@ PerformClick checks effective visibility/enabled ancestry, calls OnClick, then r
 | PointerInput | Action<PointerEvent> | protected virtual OnPointerInput(PointerEvent) |
 | KeyboardInput | Action<KeyEvent> | protected virtual OnKeyboardInput(KeyEvent) |
 | TextInput | Action<TextInputEvent> | protected virtual OnTextInput(TextInputEvent) |
+| CompositionInput | Action<TextCompositionEvent> | protected virtual OnCompositionInput(TextCompositionEvent) |
+| CandidatesInput | Action<TextCandidatesEvent> | protected virtual OnCandidatesInput(TextCandidatesEvent) |
 | FocusChanged | Action | protected virtual OnFocusChanged() |
 
 Public virtual OnMouseDown(float x, float y), OnMouseUp, and OnMouseMove are legacy local-coordinate hooks. Base OnPointerInput invokes them for Down/Up/Move; use typed pointer events when button/wheel identity matters. Other base hooks do nothing. Public input events still occur after the virtual hook; Handled controls subsequent bubbling.
@@ -96,6 +98,14 @@ Concrete Widget and the built-in traversed composite type.
 MeasureContent/ArrangeContent implement stack, overlay, and absolute behavior and can be overridden. Children flow in insertion order, paint ascending ZIndex, and hit-test reverse paint order. Hidden children collapse with no extra gap.
 
 Vertical/Horizontal stack measurement is unbounded on the main axis. Grow expands measured bases into spare main-axis space, redistributing after maximums. Main-axis content alignment moves the group; cross-axis defaults/child overrides place individual children. Overlay/Absolute ignore Gap and Grow.
+
+`Weight` aliases Grow. `WeightBasis.Content` (default) grows measured bases; Zero starts weighted children from minimum+margin for proportional cells independent of content. Finite allocations remeasure weighted children to update cross-axis sizes. Infinite allocation retains intrinsic measurement. See [wrapping and weights](../layout.md#proportional-weight).
+
+## WrapContainer
+
+Subclassable Container. Direction defaults Horizontal (also Vertical); LineGap defaults null, inheriting Gap. Direction enum validation and finite nonnegative LineGap validation throw ArgumentOutOfRangeException on invalid assignment. A finite primary boundary starts a new row/column before an item would overflow; one oversized item is allowed per line. Unbounded primary measurement produces one line. Layout is overridden by this flow algorithm; the inherited Layout property is ignored. Alignment, padding, margins, clipping, and Children remain inherited.
+
+LineCount and read-only snapshot Lines describe the last arrangement; before arrangement they are empty. Rectangles are local line extents. Weights distribute remaining primary space per line after boundary grouping; Zero uses minimum sizes to group. Hidden children take no gap/line. See the [layout guide](../layout.md#wrapping-at-a-boundary) for examples and overflow behavior.
 
 ## WidgetCollection
 

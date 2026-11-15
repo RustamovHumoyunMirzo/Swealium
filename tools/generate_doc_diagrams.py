@@ -142,6 +142,32 @@ body += text(60,500,"Track limits constrain sizes. Fraction weights divide the r
 body += text(60,540,"An undefined axis begins with one fractional track; extra implicit tracks size to content.",17)
 figures["grid-layout.svg"] = frame("Grid tracks and spanning cells", "A content-sized spanning header sits above a fixed sidebar and a body spanning one-share and two-share fractional columns. Padding and gaps surround the track slots.",body)
 
+body = text(40, 98, "Finite content boundary: 600 units", 21, weight="600")
+body += '<rect x="40" y="120" width="600" height="180" fill="#eef1f6" stroke="#6286ba" stroke-dasharray="7 6" stroke-width="2"/>'
+body += box(54,134,180,58,"Item A") + box(246,134,230,58,"Item B")
+body += box(54,218,270,58,"Item C wraps") + box(336,218,180,58,"Item D")
+body += text(682,156,"Gap: between items",19) + text(682,206,"LineGap: between rows",19)
+body += text(40,348,"WeightBasis.Zero: divide space after gaps and minimum sizes",21,weight="600")
+body += box(40,380,200,70,"Weight = 1","#e6f5ef","#4a9784")
+body += box(256,380,400,70,"Weight = 2","#e6f5ef","#4a9784")
+body += text(40,492,"Content basis: add shares to intrinsic sizes. Zero basis: proportional cells.",19)
+body += text(40,534,"Maximum constraints cap a child; remaining space redistributes to others.",19)
+figures["wrap-weight.svg"] = frame("Wrapping boundaries and proportional weight", "Items wrap when the next item and gap exceed the finite content boundary. A second example shows one-share and two-share zero-basis weighted cells.", body)
+
+body = box(40,104,280,70,"Plain text / HTML spans") + arrow(320,139,380,139)
+body += box(380,104,280,70,"Shape + bidi + fallback") + arrow(660,139,720,139)
+body += box(720,104,280,70,"Wrap + caret geometry")
+body += arrow(860,174,860,234) + box(720,234,280,70,"DrawingContext / Text")
+body += box(40,234,280,70,"TextBox: committed text","#e6f5ef","#4a9784")
+body += arrow(320,269,380,269) + box(380,234,280,70,"Selection + undo + caret","#e6f5ef","#4a9784")
+body += arrow(660,269,720,269)
+body += box(40,380,280,70,"Native IME preedit","#fff1d6","#b48a35")
+body += arrow(320,415,380,415) + box(380,380,280,70,"Transient underlined text","#fff1d6","#b48a35")
+body += arrow(660,415,720,415) + box(720,380,280,70,"Candidate popup","#fff1d6","#b48a35")
+body += text(40,508,"Preedit stays separate. A commit replaces the captured selection once.",20)
+body += text(40,546,"The operating-system IME controls candidate navigation and conversion.",18)
+figures["text-pipeline.svg"] = frame("Shared text layout and IME editing", "Plain text or HTML spans share shaping, bidi, fallback, wrapping, drawing, and caret geometry. TextBox keeps IME preedit separate until a committed event replaces the selection.", body)
+
 OUT.mkdir(parents=True, exist_ok=True)
 for name, value in figures.items():
     target = OUT / name

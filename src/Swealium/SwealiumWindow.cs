@@ -50,6 +50,7 @@ public partial class SwealiumWindow : IDisposable
             _ = Sdl.SDL_SetRenderVSync(renderer, 0); // One application-wide frame clock serves every window.
             Id = Sdl.SDL_GetWindowID(window);
             Input.FocusChanged += SyncTextInput;
+            Input.CompositionCancellationRequested += CancelNativeComposition;
             UpdateViewport();
             if (this.options.MinimumSize != default) MinimumSize = this.options.MinimumSize;
             if (this.options.MaximumSize != default) MaximumSize = this.options.MaximumSize;
@@ -207,6 +208,12 @@ public partial class SwealiumWindow : IDisposable
                 try { OnPaint(context, ClientSize); }
                 finally { context.End(); }
                 if (Content is { } root) WidgetRenderer.Render(canvas, root);
+                if (Input.FocusedWidget is TextBox editor)
+                {
+                    var overlay = new SkiaDrawingContext(canvas);
+                    try { editor.DrawCandidates(overlay, ClientSize); }
+                    finally { overlay.End(); }
+                }
             }
             finally { canvas.RestoreToCount(saved); }
             canvas.Flush();
@@ -233,9 +240,23 @@ public partial class SwealiumWindow : IDisposable
     private void SyncTextInput()
     {
         bool requested = !IsInputBlocked && Input.FocusedWidget?.AcceptsTextInput == true;
-        if (requested == textInputActive || window == 0) return;
-        Sdl.Check(requested ? Sdl.SDL_StartTextInput(window) : Sdl.SDL_StopTextInput(window));
-        textInputActive = requested;
+        if (window == 0) return;
+        if (requested != textInputActive)
+        {
+            Sdl.Check(requested ? Sdl.SDL_StartTextInput(window) : Sdl.SDL_StopTextInput(window));
+            textInputActive = requested;
+        }
+        if (requested && Input.FocusedWidget is { } focused)
+        {
+            Rect area = focused.TextInputArea;
+            for (Widget? node = focused; node is not null; node = node.Parent) area = area with { X = area.X + node.Bounds.X, Y = area.Y + node.Bounds.Y };
+            var rect = new Sdl.InputRect { X = (int)MathF.Floor(area.X), Y = (int)MathF.Floor(area.Y), Width = Math.Max(1, (int)MathF.Ceiling(area.Width)), Height = Math.Max(1, (int)MathF.Ceiling(area.Height)) };
+            Sdl.Check(Sdl.SDL_SetTextInputArea(window, in rect, 0));
+        }
+    }
+    private void CancelNativeComposition()
+    {
+        if (window != 0 && textInputActive) _ = Sdl.SDL_ClearComposition(window);
     }
     private void VerifyAccess()
     {
@@ -265,6 +286,7 @@ public partial class SwealiumWindow : IDisposable
         }
         try { Input.Root = null; } catch (Exception error) { failure ??= error; }
         Input.FocusChanged -= SyncTextInput;
+        Input.CompositionCancellationRequested -= CancelNativeComposition;
         ReleaseSurface();
         if (renderer != 0) Sdl.SDL_DestroyRenderer(renderer);
         if (window != 0) Sdl.SDL_DestroyWindow(window);

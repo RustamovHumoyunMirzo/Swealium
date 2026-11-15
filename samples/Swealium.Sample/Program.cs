@@ -3,6 +3,28 @@ using Swealium.Graphics;
 using Swealium.UI;
 
 bool smokeTest = args.Contains("--smoke-test");
+if (args.Contains("--text-demo"))
+{
+    SwealiumApplication.Run(new(){Title="Swealium — shaped text and editing",Width=850,Height=650}, window=>
+    {
+        var content = new Container {Padding=new(24),Gap=18,Background=new(242,245,250)};
+        content.Children.Add(new Text {Content="<h1>Text in Swealium</h1><p><b>Shaped</b>, <i>formatted</i>, <u>wrapped</u> — مرحبا بالعالم · שלום · 😀</p>",Markup=TextMarkup.Html,Style=new(){FontSize=20}});
+        var flow = new WrapContainer {Gap=8,LineGap=10};
+        foreach(string label in new[]{"Resize the window","Wrapping chips","Content-based size","Horizontal flow","More items"})
+            flow.Children.Add(new Button{Text=label});
+        content.Children.Add(flow);
+        var weights = new Container{Layout=LayoutMode.Horizontal,Gap=10};
+        weights.Children.Add(new Button{Text="1 share",Weight=1,WeightBasis=WeightBasis.Zero});
+        weights.Children.Add(new Button{Text="2 shares",Weight=2,WeightBasis=WeightBasis.Zero});
+        content.Children.Add(weights);
+        var editor = new TextBox{Multiline=true,Height=180,Style=new(){FontSize=22},Text="Edit text here. Try your platform IME.\nArabic: مرحبا بالعالم\nEmoji: 😀 — combining: é"};
+        content.Children.Add(editor);
+        content.Children.Add(new Text{Content="Select and drag · Ctrl/Cmd+A/C/X/V/Z · Shift+arrows · IME conversion",Style=new(){Foreground=new(80,85,100)}});
+        window.Content=content;window.Input.Focus(editor);
+        if(smokeTest) { int frames=0;window.Paint+=(_,_)=>{if(++frames==3)window.RequestClose();}; }
+    });
+    return;
+}
 SwealiumApplication.Run(new WindowOptions { Title = "Swealium - Layout and rounded input" }, window =>
 {
     var root = new Container

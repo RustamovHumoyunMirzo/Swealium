@@ -109,7 +109,7 @@ grid.HeightSizing = SizingMode.Content;
 
 Use content rows for form-like layouts. Content sizing first computes intrinsic track demand; width is then bounded by available constraints and cells are remeasured at that width so width-dependent heights are updated. A finite MaxWidth therefore causes a content-sized grid to remeasure wrapping custom widgets before reporting height.
 
-Built-in Button text is still single-line. A grid does not add text wrapping; custom widgets may return width-dependent heights from MeasureContent.
+Button uses unwrapped shaped text. Text and multiline TextBox provide width-dependent wrapping and measurement inside grid cells; custom widgets may also return width-dependent heights from MeasureContent.
 
 ## Dynamic changes and nesting
 
