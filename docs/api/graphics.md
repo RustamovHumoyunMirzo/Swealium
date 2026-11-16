@@ -4,6 +4,8 @@
 
 Namespace: Swealium.Graphics. These types expose no Skia objects.
 
+Font, ShapedText, FontFeature, variable axes, metrics and DrawingContext's typography overloads have dedicated [font contracts](../fonts.md).
+
 BlurGradient, BlurStop, BlurEdgeMode, ColorMatrix and scoped DrawingContext compositing have dedicated [effect contracts](../effects.md).
 
 Bitmap, VectorImage, VectorPath, image scaling/interpolation, and their DrawingContext methods have dedicated [media contracts](media.md).

@@ -6,6 +6,37 @@ using Swealium.UI.Effects;
 using Swealium.Animation;
 
 bool smokeTest = args.Contains("--smoke-test");
+if(args.Contains("--font-demo"))
+{
+    using var aldo=Font.Load(Path.Combine(AppContext.BaseDirectory,"Aldo.ttf"));
+    using var kerned=aldo.Shape("Free typography",64,new(){Features=[FontFeature.Kerning()]});
+    using var unkerned=aldo.Shape("Free typography",64,new(){Features=[FontFeature.Kerning(false)]});
+    bool kerning=true;
+    SwealiumApplication.Run(new(){Title="Swealium - Aldo font and advanced drawing",Width=1000,Height=780},window=>
+    {
+        var root=new Container{Padding=new(24),Gap=16,Background=new(20,27,40)};
+        root.Children.Add(new Text{Content="Loaded Aldo.ttf: custom font drawing",Style=new(){Font=aldo,FontSize=38,Foreground=Color.White}});
+        root.Children.Add(new Text{Content=$"{aldo.FamilyName} | {aldo.GlyphCount} glyphs | supported features: {string.Join(", ",aldo.FeatureTags)} | variable axes: {aldo.VariationAxes.Count}",Style=new(){Foreground=new(190,215,240)}});
+        var canvas=new DrawingCanvas((drawing,bounds)=>
+        {
+            drawing.DrawText("DrawingContext.DrawText with Aldo",new Point(bounds.X+18,bounds.Y+58),aldo,new(235,220,155),40);
+            drawing.DrawShapedText(kerning?kerned:unkerned,new(bounds.X+18,bounds.Y+150),Gradient.Horizontal(new(90,210,250),new(225,150,240)),clip:bounds);
+            drawing.DrawLine(new(bounds.X+18,bounds.Y+152),new(bounds.X+bounds.Width-18,bounds.Y+152),new(100,135,170));
+            drawing.DrawText($"Kerning {(kerning?"enabled":"disabled")} | advance {(kerning?kerned:unkerned).Size.Width:F2} px",new Point(bounds.X+18,bounds.Y+195),new(190,215,240),17);
+        }){Height=220,Radii=new(14),Background=new(30,41,58),Padding=new(8)};
+        root.Children.Add(canvas);
+        root.Children.Add(new Text{Content="Selectable text in Aldo. A font file does not need to be installed on the operating system.",Selectable=true,Style=new(){Font=aldo,FontSize=26,Foreground=Color.White}});
+        root.Children.Add(new TextBox{Text="Edit with Aldo: Free typography",Style=new(){Font=aldo,FontSize=25,Foreground=Color.Black},WidthSizing=SizingMode.Fill});
+        var controls=new Container{Layout=LayoutMode.Horizontal,HeightSizing=SizingMode.Content,Gap=12};
+        var toggle=new Button{Text="Toggle kerning",Weight=1,Style=new(){Font=aldo,FontSize=23,Foreground=Color.White}};toggle.Click+=()=>kerning=!kerning;
+        var close=new Button{Text="Close demo",Weight=1,Style=new(){Font=aldo,FontSize=23,Foreground=Color.White}};close.Click+=window.RequestClose;
+        controls.Children.Add(toggle);controls.Children.Add(close);root.Children.Add(controls);
+        root.Children.Add(new Text{Content="Aldo provides legacy kerning, with no GSUB ligatures or variation axes. Unsupported feature tags cannot create glyphs a font lacks.",Style=new(){Foreground=new(190,215,240)}});
+        window.Content=root;
+        if(smokeTest){int frames=0;window.Paint+=(_,_)=>{if(++frames==3)window.RequestClose();};}
+    });
+    return;
+}
 if(args.Contains("--ripple-demo"))
 {
     SwealiumApplication.Run(new(){Title="Swealium - triggered ripple effects",Width=850,Height=560},window=>

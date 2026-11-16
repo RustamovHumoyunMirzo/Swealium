@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <SwealiumPackageVersion Condition="'$(SwealiumPackageVersion)' == ''">0.1.0</SwealiumPackageVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Deliberately no project reference or individual backend references. -->
+    <PackageReference Include="Swealium" Version="$(SwealiumPackageVersion)" />
+  </ItemGroup>
+</Project>

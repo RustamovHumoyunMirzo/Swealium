@@ -30,6 +30,20 @@ public abstract class DrawingContext
     /// <summary>Draw shaped text at a baseline origin.</summary>
     public abstract void DrawText(string text, Point baseline, Color color, float fontSize = 16);
     public abstract Size MeasureText(string text, float fontSize = 16);
+    /// <summary>Draw a shaped paragraph-style line at a baseline with loaded/system font selection.</summary>
+    public virtual void DrawText(string text,Point baseline,TextStyle style)
+    {
+        ArgumentNullException.ThrowIfNull(style);using var layout=new TextLayout(text,style,new(){Wrapping=TextWrapping.None});
+        DrawTextLayout(layout,new(baseline.X,baseline.Y-layout.Baseline));
+    }
+    public virtual Size MeasureText(string text,TextStyle style,TextOptions? options=null,float maxWidth=float.PositiveInfinity,TextMarkup markup=TextMarkup.Plain)
+    {ArgumentNullException.ThrowIfNull(style);using var layout=new TextLayout(text,style,options,maxWidth,markup);return layout.Size;}
+    /// <summary>Draw one single-font script/direction segment with explicit OpenType shaping controls.</summary>
+    public virtual void DrawText(string text,Point baseline,Font font,Color color,float fontSize=16,TextShapingOptions? options=null)
+    {using var shaped=new ShapedText(text,font,fontSize,options);DrawShapedText(shaped,baseline,color);}
+    public virtual Size MeasureText(string text,Font font,float fontSize=16,TextShapingOptions? options=null)
+    {using var shaped=new ShapedText(text,font,fontSize,options);return shaped.Size;}
+    public virtual void DrawShapedText(ShapedText text,Point baseline,Color color,Rect? clip=null)=>throw new NotSupportedException("This context does not implement shaped glyph segments.");
     public virtual void DrawVector(VectorImage image,Rect destination,float opacity=1,Rect? clip=null)=>throw new NotSupportedException("This drawing context does not implement vector images.");
     public virtual void FillPath(VectorPath path,Color color)=>throw new NotSupportedException("This drawing context does not implement vector paths.");
     public virtual void StrokePath(VectorPath path,Color color,float width=1,PathLineCap cap=PathLineCap.Flat,PathLineJoin join=PathLineJoin.Miter)=>throw new NotSupportedException("This drawing context does not implement vector paths.");

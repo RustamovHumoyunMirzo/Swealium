@@ -1,6 +1,6 @@
 # Swealium documentation
 
-Documentation for **0.1.0-alpha.1 / .NET 10**. This describes the implemented API in this repository, including its current limitations. Swealium is a retained-mode GUI foundation with GPU drawing and CPU raster fallback, SDL3 platform integration, explicit UI-thread ownership, and a small widget set.
+Documentation for **0.1.0 / .NET 10**. This describes the implemented API in this repository, including its current limitations. Swealium is a retained-mode GUI foundation with GPU drawing and CPU raster fallback, SDL3 platform integration, explicit UI-thread ownership, and a small widget set.
 
 ## Start here
 
@@ -34,12 +34,14 @@ Documentation for **0.1.0-alpha.1 / .NET 10**. This describes the implemented AP
 | [Cursors](cursors.md) | System types, inheritance/capture, window defaults, hidden and custom bitmap cursors |
 | [Selection and custom editors](text-selection.md) | Repeated clicks, selectable read-only text, placeholder color, composition without TextBox inheritance |
 | [Text and editing](text.md) | Shaping, bidi, HTML text markup, Text/TextBox, selection, clipboard, IME preedit/candidates |
+| [Fonts and advanced drawing](fonts.md) | File/system fonts, Aldo demo, OpenType features, variable axes, metrics and reusable glyph segments |
 | [Widget hub](widgets/README.md) | Every public widget, inherited contracts, examples, strokes, and scrollbars |
 | [Data lists](widgets/list.md) | Typed collection templates, observable updates, owned scrolling and nested focus |
 | [Scrolling](widgets/scroll-container.md) | Directions, viewport/extent, nested input, custom or hidden scrollbars |
 | [Custom widgets](custom-widgets.md) | Intrinsic measurement, drawing, event overrides, custom containers |
 | [Native interop](native-interop.md) | Portable routing IDs versus borrowed OS handles, window-system kinds, ownership |
 | [Platform and deployment](platforms.md) | Native dependencies, target coverage, workloads, packaging, reproducibility |
+| [Release and NuGet publishing](releasing.md) | Version/tag matching, GitHub release automation, trusted publishing, package validation and retries |
 | [Troubleshooting](troubleshooting.md) | Missing fonts/libraries, geometry, input, unsupported window controls |
 | [Maintaining documentation](maintenance.md) | Regenerate signatures and SVGs, validation, contribution expectations |
 

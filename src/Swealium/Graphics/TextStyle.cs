@@ -9,7 +9,12 @@ public enum TextVerticalAlignment { Top, Center, Bottom }
 
 public sealed record TextStyle
 {
+    /// <summary>Explicit font face. Null resolves FontFamily/weight/width/slant through the system mapper.</summary>
+    public Font? Font {get;init;}
     public string? FontFamily { get; init; }
+    public FontWidth FontWidth {get;init;}=FontWidth.Normal;
+    /// <summary>Null preserves the legacy Italic switch; an explicit slant takes precedence.</summary>
+    public FontSlant? FontSlant {get;init;}
     public float FontSize { get; init; } = 16;
     public int FontWeight { get; init; } = 400;
     public bool Italic { get; init; }
@@ -25,8 +30,9 @@ public sealed record TextStyle
     {
         if (!float.IsFinite(FontSize) || FontSize <= 0 || FontWeight is < 1 or > 1000 ||
             !float.IsFinite(LineHeight) || LineHeight <= 0 || !float.IsFinite(LetterSpacing) ||
-            !Enum.IsDefined(Direction) || !Enum.IsDefined(Script))
+            !Enum.IsDefined(Direction) || !Enum.IsDefined(Script) || !Enum.IsDefined(FontWidth) || FontSlant is {} slant&&!Enum.IsDefined(slant))
             throw new ArgumentOutOfRangeException(nameof(TextStyle));
+        ObjectDisposedException.ThrowIf(Font?.IsDisposed==true,Font!);
     }
 }
 public sealed record TextOptions

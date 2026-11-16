@@ -43,5 +43,5 @@ Blue marks framework-owned state; teal marks layout/content; amber marks externa
 
 ## Versioning and limitations
 
-This is prerelease documentation, not a stability promise. Record behavioral changes in the relevant page; do not claim desktop CI or mobile support has been verified without results. Update the platform matrix when actual execution evidence changes.
+The 0.x API is evolving. Record behavioral changes in the relevant page; do not claim desktop CI or mobile support has been verified without results. Update the platform matrix when actual execution evidence changes. See [releasing](releasing.md) for version/tag checks and automatic nuget.org publishing.
 

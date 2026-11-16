@@ -23,6 +23,7 @@ The library targets net10.0 and pins:
 | SkiaSharp | 4.153.1 | Managed GPU/raster drawing and platform native references |
 | SkiaSharp.NativeAssets.Linux | 4.153.1 | Fontconfig-enabled Linux renderer |
 | Topten.RichTextKit | 0.6.173 | Paragraph shaping, bidi, wrapping, fallback, and caret geometry (Apache-2.0) |
+| HarfBuzzSharp | 14.2.1.301 | Explicit OpenType shaping and variable-font segments |
 | AngleSharp | 1.10.3 | HTML text parsing without resource loaders/scripts (MIT) |
 | Svg.Skia | 5.2.3 | Static SVG renderer, document/model dependencies, internal Skia integration (MIT) |
 | StbImageSharp | 2.30.16 | Portable additional raster codecs (Unlicense OR MIT) |
@@ -52,7 +53,9 @@ Mobile deployment requires platform workloads, signing/build tools, lifecycle in
 dotnet pack src/Swealium -c Release -o artifacts
 ```
 
-The prerelease package ID is Swealium and current version is 0.1.0-alpha.1. No package is published by this repository workflow. Set license, authors, and repository metadata before publishing. The package includes the README and documentation tree so relative documentation links remain available in the archive.
+The package ID is Swealium and current version is 0.1.0. The package declares Apache-2.0, publisher/repository metadata, XML documentation, and transitive runtime dependencies. The matching .snupkg supplies portable debug symbols and Source Link metadata. README, LICENSE and the documentation tree are included in the archive; sample/test fonts are excluded.
+
+Published GitHub releases run the [NuGet release workflow](releasing.md). The release tag must match the project version. Tests on Windows/Linux/macOS and a separate NuGet-only consumer must succeed before publication. Users install a single Swealium PackageReference; its dependencies resolve transitively, including the packaged native binaries for supported RIDs. OS graphics drivers, display services and fonts remain platform prerequisites.
 
 ## Validation
 

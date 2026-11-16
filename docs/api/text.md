@@ -10,7 +10,9 @@ Both are immutable sealed records; use `with` to produce changes. They are valid
 
 | TextStyle member | Default / contract |
 | --- | --- |
+| Font | null; an explicit owned Font face overrides family/style matching; see [font contracts](../fonts.md) |
 | FontFamily | null: system default; unavailable families use backend/system fallback |
+| FontWidth / FontSlant | Normal / null; null slant preserves Italic, explicit slant takes precedence |
 | FontSize | 16 logical units, finite and positive |
 | FontWeight | 400; integer 1–1000 |
 | Italic / Underline / StrikeThrough | false |
@@ -42,6 +44,8 @@ Each TextRun contains literal `Text` and its `Style`. The enumerable is snapshot
 `TextSelection(Start, Length)` uses UTF-16. Drawing validates nonnegative ranges within PlainText; malformed ranges throw. These record structs have ordinary generated equality/deconstruction. `Dispose` releases retained layout resources, is idempotent, and invalidates hit testing, caret enumeration, line/truncation queries, and painting with ObjectDisposedException. The immutable string/style/size snapshots remain readable. Do not use layouts concurrently.
 
 ## DrawingContext text overloads
+
+Loaded-font, TextStyle baseline, shaped-segment drawing, OpenType controls and extended measurement overloads have dedicated [font contracts](../fonts.md).
 
 `DrawText(string, Rect, TextStyle? = null, TextOptions? = null, TextMarkup = Plain)` creates a temporary layout at bounds.Width, aligns it vertically, draws at the top-left-derived origin, clips to bounds, then disposes it. `DrawTextLayout(TextLayout, Point, TextSelection? = null, Color? selectionColor = null, Rect? clip = null)` reuses a caller-owned layout and optionally paints selection and clips in local drawing coordinates. Default selection color is RGBA (70,110,210,120). It does not dispose the layout.
 

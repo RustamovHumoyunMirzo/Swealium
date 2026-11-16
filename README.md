@@ -1,8 +1,15 @@
 # Swealium
 
 [![Build and smoke test](https://github.com/RustamovHumoyunMirzo/Swealium/actions/workflows/build.yml/badge.svg)](https://github.com/RustamovHumoyunMirzo/Swealium/actions/workflows/build.yml)
+[![NuGet version](https://img.shields.io/nuget/v/Swealium.svg)](https://www.nuget.org/packages/Swealium)
 
 A .NET 10 retained-mode GUI framework using SDL3 windowing and SkiaSharp GPU rendering with CPU fallback. Public drawing, layout, input, window, and native-interop types belong to Swealium.
+
+```sh
+dotnet add package Swealium --version 0.1.0
+```
+
+Managed dependencies and SDL3/Skia/HarfBuzz native assets restore automatically. Linux desktop prerequisites and platform boundaries are covered in the [installation guide](docs/getting-started.md).
 
 ```csharp
 using Swealium;
@@ -32,6 +39,7 @@ dotnet pack src/Swealium -c Release -o artifacts
 - [AnimatorContext and UI-thread animations](docs/animation.md)
 - [Grid rows, columns, and spans](docs/grid.md)
 - [Shaped text, HTML markup, editing, and IME](docs/text.md)
+- [Fonts, OpenType features, and variable-font drawing](docs/fonts.md)
 - [Bitmaps, image formats, SVG, and vector paths](docs/images-and-vectors.md)
 - [System and custom bitmap cursors](docs/cursors.md)
 - [Input and focus](docs/input.md)
@@ -44,6 +52,6 @@ dotnet pack src/Swealium -c Release -o artifacts
 - [Portable IDs and borrowed native handles](docs/native-interop.md)
 - [Platform/deployment status](docs/platforms.md)
 
-Prerelease 0.1.0-alpha.1; no NuGet package is published. Windows x64 is locally verified. Linux/macOS have native assets and CI configuration but require target runtime verification. iOS/Android application hosts are not implemented. See the platform guide for dependencies and current limitations.
+Version 0.1.0 targets desktop applications on .NET 10. Windows x64 is locally verified; Linux/macOS are checked in CI. iOS/Android application hosts are not implemented. See the platform guide for dependencies and current limitations.
 
 [Rendering settings and GPU acceleration](docs/rendering.md) · Application defaults and per-context anti-aliasing.

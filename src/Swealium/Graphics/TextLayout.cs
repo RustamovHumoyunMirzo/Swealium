@@ -9,6 +9,18 @@ public sealed class TextLayout : IDisposable
 {
     private readonly Kit.TextBlock block = new();
     private readonly Dictionary<Kit.IStyle,TextStyle> sourceStyles = new();
+    private readonly Dictionary<Font,Font.Lease> fontLeases=new();
+    private readonly Dictionary<string,SKTypeface> fontFaces=new(StringComparer.Ordinal);
+    private sealed class LoadedFontMapper(Dictionary<string,SKTypeface> faces,Dictionary<Kit.IStyle,TextStyle> styles) : Kit.FontMapper
+    {
+        public override SKTypeface TypefaceFromStyle(Kit.IStyle style,bool ignoreFontVariants)
+        {
+            if(faces.TryGetValue(style.FontFamily,out var face))return face;
+            if(styles.TryGetValue(style,out var source)&&source.FontSlant==Graphics.FontSlant.Oblique)
+                return SKTypeface.FromFamilyName(style.FontFamily,new SKFontStyle(style.FontWeight,(int)style.FontWidth,SKFontStyleSlant.Oblique));
+            return base.TypefaceFromStyle(style,ignoreFontVariants);
+        }
+    }
     private readonly int[] codePointOffsets;
     private readonly TextStyle baseStyle;
     private bool disposed;
@@ -49,21 +61,30 @@ public sealed class TextLayout : IDisposable
             TextAlignment.End => options.Direction == TextDirection.Automatic ? Kit.TextAlignment.Auto : rtl ? Kit.TextAlignment.Left : Kit.TextAlignment.Right,
             _ => options.Direction == TextDirection.Automatic ? Kit.TextAlignment.Auto : rtl ? Kit.TextAlignment.Right : Kit.TextAlignment.Left
         };
-        foreach (var run in snapshot) block.AddText(run.Text, ToNative(run.Style));
-        // A zero-width final run supplies caret/font metrics for empty and trailing-newline paragraphs.
-        block.AddText("\u200b", ToNative(snapshot.LastOrDefault()?.Style ?? baseStyle));
-        block.Layout();
-        if (options.Alignment == TextAlignment.End && options.Direction == TextDirection.Automatic && float.IsFinite(maxWidth))
+        block.FontMapper=new LoadedFontMapper(fontFaces,sourceStyles);
+        try
         {
-            // Auto alignment encodes the engine's resolved paragraph direction. A short
-            // line has a positive left inset only when its natural alignment is right.
-            bool naturalRight = block.Lines.Any(line => line.Width < maxWidth - .01f &&
-                line.Runs.Count > 0 && line.Runs.Min(run => run.XCoord) > .01f);
-            block.Alignment = naturalRight ? Kit.TextAlignment.Left : Kit.TextAlignment.Right;
+            foreach (var run in snapshot) block.AddText(run.Text, ToNative(run.Style));
+            // A zero-width final run supplies caret/font metrics for empty and trailing-newline paragraphs.
+            block.AddText("\u200b", ToNative(snapshot.LastOrDefault()?.Style ?? baseStyle));
             block.Layout();
+            if (options.Alignment == TextAlignment.End && options.Direction == TextDirection.Automatic && float.IsFinite(maxWidth))
+            {
+                // Auto alignment encodes the engine's resolved paragraph direction. A short
+                // line has a positive left inset only when its natural alignment is right.
+                bool naturalRight = block.Lines.Any(line => line.Width < maxWidth - .01f &&
+                    line.Runs.Count > 0 && line.Runs.Min(run => run.XCoord) > .01f);
+                block.Alignment = naturalRight ? Kit.TextAlignment.Left : Kit.TextAlignment.Right;
+                block.Layout();
+            }
+            Size = new(block.MeasuredWidth, Math.Max(block.MeasuredHeight, baseStyle.FontSize * baseStyle.LineHeight));
+            Baseline = block.Lines.Count == 0 ? baseStyle.FontSize : block.Lines[0].BaseLine;
         }
-        Size = new(block.MeasuredWidth, Math.Max(block.MeasuredHeight, baseStyle.FontSize * baseStyle.LineHeight));
-        Baseline = block.Lines.Count == 0 ? baseStyle.FontSize : block.Lines[0].BaseLine;
+        catch
+        {
+            try{block.Clear();block.Layout();}finally{foreach(var lease in fontLeases.Values)lease.Dispose();fontLeases.Clear();}
+            throw;
+        }
     }
     public string PlainText { get; }
     public IReadOnlyList<TextRun> Runs { get; }
@@ -205,7 +226,8 @@ public sealed class TextLayout : IDisposable
     public void Dispose()
     {
         if (disposed) return;
-        block.Clear(); block.Layout(); disposed = true;
+        try{block.Clear();block.Layout();}
+        finally{foreach(var lease in fontLeases.Values)lease.Dispose();fontLeases.Clear();fontFaces.Clear();sourceStyles.Clear();disposed=true;}
         GC.SuppressFinalize(this);
     }
     private static IEnumerable<TextRun> Parse(string text, TextStyle style, TextMarkup markup)
@@ -227,10 +249,17 @@ public sealed class TextLayout : IDisposable
     };
     private Kit.Style ToNative(TextStyle style)
     {
+        string family=style.FontFamily??SKTypeface.Default.FamilyName;
+        if(style.Font is {} loaded)
+        {
+            loaded.VerifyParagraphSupport();
+            if(!fontLeases.TryGetValue(loaded,out var lease)){lease=loaded.Acquire();fontLeases.Add(loaded,lease);}
+            family=loaded.MappingName;fontFaces[family]=lease.Typeface;
+        }
         var native = new Kit.Style()
     {
-        FontFamily = style.FontFamily ?? SKTypeface.Default.FamilyName,
-        FontSize = style.FontSize, FontWeight = style.FontWeight, FontItalic = style.Italic,
+        FontFamily = family,FontWidth=(SKFontStyleWidth)style.FontWidth,
+        FontSize = style.FontSize, FontWeight = style.FontWeight, FontItalic = style.FontSlant is {} slant?slant!=Graphics.FontSlant.Upright:style.Italic,
         TextColor = Native(style.Foreground), BackgroundColor = Native(style.Background),
         Underline = style.Underline ? Kit.UnderlineStyle.Solid : Kit.UnderlineStyle.None,
         StrikeThrough = style.StrikeThrough ? Kit.StrikeThroughStyle.Solid : Kit.StrikeThroughStyle.None,

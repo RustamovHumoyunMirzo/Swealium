@@ -1,5 +1,15 @@
 name: Build and smoke test
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_call:
+    inputs:
+      ref:
+        description: Exact source ref to validate before publishing
+        required: false
+        type: string
+permissions:
+  contents: read
 jobs:
   desktop:
     strategy:
@@ -8,11 +18,13 @@ jobs:
         os: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: 10.0.x
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.13'
       - run: dotnet build -c Release
@@ -91,4 +103,24 @@ jobs:
         env:
           SDL_VIDEO_DRIVER: dummy
           SDL_RENDER_DRIVER: software
-      - run: dotnet pack src/Swealium -c Release --no-build -o artifacts
+      - name: Render loaded Aldo font and shaped text
+        run: dotnet run --project samples/Swealium.Sample -c Release --no-build -- --font-demo --smoke-test
+        env:
+          SDL_VIDEO_DRIVER: dummy
+          SDL_RENDER_DRIVER: software
+      - name: Pack library and symbols
+        run: dotnet pack src/Swealium -c Release --no-build -o artifacts/packages
+      - name: Verify package metadata and dependency contract
+        run: python tools/check_package.py artifacts/packages
+      - name: Install and run a consumer using only the package
+        shell: pwsh
+        run: |
+          [xml]$project = Get-Content src/Swealium/Swealium.csproj
+          $version = $project.Project.PropertyGroup.Version | Where-Object { $_ }
+          dotnet restore tests/Swealium.PackageSmoke --configfile tests/Swealium.PackageSmoke/NuGet.Config -p:SwealiumPackageVersion=$version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run --project tests/Swealium.PackageSmoke -c Release --no-restore -p:SwealiumPackageVersion=$version
+          exit $LASTEXITCODE
+        env:
+          SDL_VIDEO_DRIVER: dummy
+          SDL_RENDER_DRIVER: software

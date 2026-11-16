@@ -7,4 +7,6 @@ internal static class TextMetrics
         using var layout = new TextLayout(text, new() { FontSize = fontSize }, new() { Wrapping = TextWrapping.None });
         return layout.Size;
     }
+    internal static Size Measure(string text,TextStyle style)
+    {using var layout=new TextLayout(text,style,new(){Wrapping=TextWrapping.None});return layout.Size;}
 }

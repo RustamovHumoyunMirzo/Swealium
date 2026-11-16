@@ -103,6 +103,28 @@ internal sealed partial class SkiaDrawingContext(SKCanvas canvas) : DrawingConte
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(fontSize);
         return TextMetrics.Measure(text, fontSize);
     }
+    public override void DrawText(string text,Point baseline,TextStyle style){Verify();base.DrawText(text,baseline,style);}
+    public override Size MeasureText(string text,TextStyle style,TextOptions? options=null,float maxWidth=float.PositiveInfinity,TextMarkup markup=TextMarkup.Plain)
+    {Verify();return base.MeasureText(text,style,options,maxWidth,markup);}
+    public override void DrawText(string text,Point baseline,Font font,Color color,float fontSize=16,TextShapingOptions? options=null)
+    {Verify();base.DrawText(text,baseline,font,color,fontSize,options);}
+    public override Size MeasureText(string text,Font font,float fontSize=16,TextShapingOptions? options=null)
+    {Verify();return base.MeasureText(text,font,fontSize,options);}
+    public override void DrawShapedText(ShapedText text,Point baseline,Color color,Rect? clip=null)
+    {
+        Verify();ArgumentNullException.ThrowIfNull(text);
+        if(!float.IsFinite(baseline.X)||!float.IsFinite(baseline.Y))throw new ArgumentOutOfRangeException(nameof(baseline));
+        if(clip is {} area)ImageLayout.ValidateRect(area);
+        var blob=text.Blob(AntiAliasing);if(blob is null)return;
+        int saved=canvas.Save();
+        try
+        {
+            if(clip is {} bounds)canvas.ClipRect(ToRect(bounds));canvas.Translate(baseline.X,baseline.Y);
+            using var paint=Paint(color,new(0,-text.Metrics.Ascent,Math.Max(text.Size.Width,.0001f),Math.Max(text.Size.Height,.0001f)));
+            canvas.DrawText(blob,0,0,paint);
+        }
+        finally{canvas.RestoreToCount(saved);}
+    }
     public override void DrawBitmap(Bitmap bitmap,Rect destination,Rect? source=null,float opacity=1,BitmapInterpolation interpolation=BitmapInterpolation.Linear,Rect? clip=null)
     {
         Verify();ArgumentNullException.ThrowIfNull(bitmap);ImageLayout.ValidateRect(destination);ImageLayout.ValidateOpacity(opacity);

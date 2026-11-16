@@ -129,6 +129,8 @@ Replacing an item with itself is a no-op. Removing/replacing/clearing updates Pa
 
 Concrete subclassable Widget with intrinsic single-line text measurement and activation behavior.
 
+`Style` is a TextStyle defaulting to a 16-unit white caption. FontSize/Foreground update its corresponding fields; all style changes invalidate measurement. See [font contracts](../fonts.md).
+
 | Property | Default |
 | --- | --- |
 | Text | "Button"; non-null; changing invalidates measure |

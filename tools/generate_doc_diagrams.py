@@ -352,6 +352,25 @@ body += text(40,550,"RepeatCount = 1, AutoReverse = true. Pause freezes time; Se
 body += text(40,590,"Manual clock: Start(Manual), then Advance(delta). No SDL or worker timer required.",18)
 figures["animation-timeline.svg"] = frame("Animator timeline and frame integration", "Automatic animations advance on the UI thread after native events and before window rendering. The timeline shows an initial delay, a forward iteration, a held endpoint during repeat delay, and an auto-reversed iteration ending at From. Manual clocks advance explicitly; pause does not consume time.",body,height=625)
 
+body = box(40,95,270,65,"File or system Font")+arrow(310,128,365,128)
+body += box(365,95,310,65,"Shape: features + axes","#e6f5ef","#4a9784")+arrow(675,128,730,128)
+body += box(730,95,270,65,"Cached ShapedText glyphs")
+body += box(40,215,600,325,"","#eef4ff","#6286ba")
+body += text(65,250,"Baseline-relative drawing and font metrics",22,weight="600")
+body += '<path d="M90 315 H610 M90 425 H610 M90 475 H610" fill="none" stroke="#99a7b6" stroke-width="1.5" stroke-dasharray="6 5"/>'
+body += text(140,425,"Aldo gy",80,fill="#466fb3")
+body += '<path d="M90 425 H610" stroke="#4a9784" stroke-width="2.5"/>'
+body += text(470,415,"Baseline",18,fill="#4a9784")
+body += '<path d="M110 315 V425 M100 315 H120 M100 425 H120 M110 425 V475 M100 475 H120" stroke="#b48a35" stroke-width="2"/>'
+body += text(65,370,"Ascent",16)+text(65,460,"Descent",16)
+body += text(65,520,"Ink bounds and advance width are different measurements.",18)
+body += box(680,230,320,65,"kern: pair spacing", "#fff2d9", "#bd8a35")
+body += box(680,320,320,65,"liga / ss01: substitutions", "#fff2d9", "#bd8a35")
+body += box(680,410,320,65,"wght / wdth: variable axes", "#fff2d9", "#bd8a35")
+body += text(40,585,"A font must contain the requested feature or axis. Prepared glyphs draw at any baseline.",19)
+body += text(40,620,"TextLayout remains the paragraph, bidi, fallback and editing path.",19)
+figures["font-shaping.svg"] = frame("Font shaping and baseline metrics", "File or system fonts are shaped with explicit OpenType features and variable axes into reusable glyph segments. A conceptual baseline diagram distinguishes font ascent and descent from visible ink bounds and advance width. Kerning changes pair spacing, ligatures and stylistic sets change glyphs, and variation axes select supported designs. Paragraph layout retains its bidi, fallback and editing role.",body,height=650)
+
 OUT.mkdir(parents=True, exist_ok=True)
 for name, value in figures.items():
     target = OUT / name

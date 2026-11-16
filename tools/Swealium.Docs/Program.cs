@@ -36,6 +36,7 @@ foreach (Type type in types)
     {
         _ when typeof(Widget).IsAssignableFrom(type) => "../widgets/"+WidgetPage(type),
         "Swealium.Animation" => "../animation.md",
+        "Swealium.Graphics" when type.Name.StartsWith("Font",StringComparison.Ordinal)||type.Name is "TextShapingOptions" or "ShapedText" or "ShapedGlyph" => "../fonts.md",
         _ when type.Namespace == "Swealium.UI.Effects" || type.Name is "WidgetEffect" or "WidgetEffectCollection" or "BlurGradient" or "BlurStop" or "BlurEdgeMode" or "ColorMatrix" => "../effects.md",
         "Swealium.Graphics" when type.Name.StartsWith("Gradient",StringComparison.Ordinal) => "gradients.md",
         _ when type.Name is "SharedTextSelection" or "TextSelectionPart" => "text.md",

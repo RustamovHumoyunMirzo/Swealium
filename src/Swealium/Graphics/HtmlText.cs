@@ -37,12 +37,12 @@ internal static class HtmlText
             current = tag switch
             {
                 "b" or "strong" => current with { FontWeight = 700 },
-                "i" or "em" => current with { Italic = true },
+                "i" or "em" => current with { Italic = true,FontSlant=FontSlant.Italic },
                 "u" => current with { Underline = true },
                 "s" or "del" or "strike" => current with { StrikeThrough = true },
                 "sub" => current with { Script = TextScript.Subscript },
                 "sup" => current with { Script = TextScript.Superscript },
-                "code" or "pre" => current with { FontFamily = "monospace" },
+                "code" or "pre" => current with { Font=null,FontFamily = "monospace" },
                 "h1" => current with { FontSize = current.FontSize * 2, FontWeight = 700 },
                 "h2" => current with { FontSize = current.FontSize * 1.5f, FontWeight = 700 },
                 "h3" => current with { FontSize = current.FontSize * 1.2f, FontWeight = 700 },
@@ -55,8 +55,9 @@ internal static class HtmlText
                 string key = pair[0].Trim().ToLowerInvariant(), value = pair[1].Trim();
                 if (key == "color" && TryColor(value, out var color)) current = current with { Foreground = color };
                 if (key == "background-color" && TryColor(value, out color)) current = current with { Background = color };
-                if (key == "font-family") current = current with { FontFamily = value.Split(',')[0].Trim(' ', '\'', '"') };
-                if (key == "font-style") current = current with { Italic = value == "italic" || value == "oblique" };
+                if (key == "font-family") current = current with { Font=null,FontFamily = value.Split(',')[0].Trim(' ', '\'', '"') };
+                if (key == "font-style") current = current with { Italic = value == "italic" || value == "oblique",FontSlant=value=="oblique"?FontSlant.Oblique:value=="italic"?FontSlant.Italic:FontSlant.Upright };
+                if (key == "font-stretch") current=current with{FontWidth=value switch{"ultra-condensed"=>FontWidth.UltraCondensed,"extra-condensed"=>FontWidth.ExtraCondensed,"condensed"=>FontWidth.Condensed,"semi-condensed"=>FontWidth.SemiCondensed,"semi-expanded"=>FontWidth.SemiExpanded,"expanded"=>FontWidth.Expanded,"extra-expanded"=>FontWidth.ExtraExpanded,"ultra-expanded"=>FontWidth.UltraExpanded,_=>FontWidth.Normal}};
                 if (key == "font-weight")
                 {
                     int weight = value == "bold" ? 700 : value == "normal" ? 400 : int.TryParse(value, out int n) ? n : current.FontWeight;

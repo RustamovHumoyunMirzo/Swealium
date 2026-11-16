@@ -6,14 +6,26 @@
 
 Use a .NET 10 SDK. The repository's global.json requests the 10.0 feature band and permits newer feature bands. A desktop graphical session is required for normal windows. Linux also needs SDL's platform dependencies, fontconfig, and an installed font.
 
-No package has been published. Reference the project while developing against this checkout:
+## Install from nuget.org
+
+Add just the Swealium package to a .NET 10 console application:
 
 ```sh
 dotnet new console -n MyApp -f net10.0
-dotnet add MyApp reference /path/to/Swealium/src/Swealium/Swealium.csproj
+dotnet add MyApp package Swealium --version 0.1.0
 ```
 
-The path is an example; substitute your checkout location. Native assets flow through package references; do not copy arbitrary SDL2 or Skia binaries over the resolved SDL3 dependencies.
+NuGet restores the managed dependencies and platform-native SDL3, Skia and HarfBuzz binaries automatically. There is no separate list of backend packages to add, and no SDL/Skia DLL download step. Publish your app for its target RID as described in [deployment](platforms.md#consumer-publishing). Keep the resolved native assets; do not replace them with arbitrary SDL2 or different Skia versions.
+
+On Debian/Ubuntu desktops with no fonts/fontconfig installed, install the OS text prerequisites once:
+
+```sh
+sudo apt-get install libfontconfig1 fonts-dejavu-core
+```
+
+A desktop graphical session and working platform graphics/windowing libraries are still OS requirements. Headless servers use the documented dummy/software test mode. Windows/macOS use their platform fonts. Mobile native hosts, NativeAOT and trimming are not supplied/supported release configurations in 0.1.0.
+
+For source development instead, replace the package command with `dotnet add MyApp reference /path/to/Swealium/src/Swealium/Swealium.csproj`.
 
 ## First application
 

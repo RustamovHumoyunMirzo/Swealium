@@ -8,17 +8,18 @@ public class Button : Widget
     private readonly HashSet<PointerId> insidePointers=[];
     private Key activationKey;
     private string text = "Button";
-    private float fontSize = 16;
+    private TextStyle style=new(){Foreground=Color.White};
+    public TextStyle Style {get=>style;set{ArgumentNullException.ThrowIfNull(value);value.Validate();style=value;InvalidateLayout();}}
     public Button() { IsFocusable = true; Padding = new Thickness(16, 12); Radii = new CornerRadii(6); FocusStroke=new(2,Color.White); Cursor=Swealium.Input.Cursor.Pointer; }
     public string Text { get => text; set { ArgumentNullException.ThrowIfNull(value); text = value; InvalidateLayout(); } }
     public Color Background { get; set; } = new(52, 89, 160);
     public Color HoverBackground { get; set; } = new(65, 111, 193);
     public Color PressedBackground { get; set; } = new(38, 67, 125);
-    public Color Foreground { get; set; } = Color.White;
+    public Color Foreground { get=>Style.Foreground;set=>Style=Style with{Foreground=value}; }
     public float FontSize
     {
-        get => fontSize;
-        set { if (!float.IsFinite(value) || value <= 0) throw new ArgumentOutOfRangeException(nameof(value)); fontSize = value; InvalidateLayout(); }
+        get => Style.FontSize;
+        set { if (!float.IsFinite(value) || value <= 0) throw new ArgumentOutOfRangeException(nameof(value));Style=Style with{FontSize=value}; }
     }
     public bool IsPressed => IsInteractable && (pressedPointers.Any(insidePointers.Contains) || activationKey != Key.Unknown);
 
@@ -26,12 +27,12 @@ public class Button : Widget
     {
         Color background = !IsInteractable ? new(65, 65, 70) : IsPressed ? PressedBackground : IsPointerOver ? HoverBackground : Background;
         context.FillRectangle(new(0, 0, ActualWidth, ActualHeight), background, Radii);
-        context.DrawText(Text, ContentBounds, new TextStyle { Foreground = Foreground, FontSize = FontSize },
+        context.DrawText(Text, ContentBounds, Style,
             new TextOptions { Wrapping = TextWrapping.None, Alignment = TextAlignment.Center, VerticalAlignment = TextVerticalAlignment.Center });
     }
     protected override Size MeasureContent(Size available)
     {
-        Size text = TextMetrics.Measure(Text, FontSize);
+        Size text = TextMetrics.Measure(Text, Style);
         return new(text.Width, Math.Max(20, text.Height));
     }
     protected override void OnPointerInput(PointerEvent e)

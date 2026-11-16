@@ -1,0 +1,87 @@
+name: Publish NuGet release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to retry (for example v0.1.0)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nuget-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+      - name: Require a matching project version and a release commit on main
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          python tools/check_package.py --release-tag "$RELEASE_TAG"
+          git merge-base --is-ancestor HEAD origin/main
+
+  validate:
+    needs: version
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ github.event.release.tag_name || inputs.tag }}
+
+  publish:
+    needs: [version, validate]
+    runs-on: ubuntu-latest
+    environment: nuget
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+      - name: Build the exact release package and symbols
+        run: dotnet pack src/Swealium -c Release -o artifacts/packages -p:ContinuousIntegrationBuild=true
+      - name: Inspect release package
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: python tools/check_package.py artifacts/packages --release-tag "$RELEASE_TAG"
+      - name: Attach packages to the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          PACKAGE_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          gh release upload "$RELEASE_TAG" "artifacts/packages/Swealium.$PACKAGE_VERSION.nupkg" "artifacts/packages/Swealium.$PACKAGE_VERSION.snupkg" --clobber
+      - name: Authenticate to nuget.org with GitHub OIDC
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+        id: login
+        with:
+          user: ${{ vars.NUGET_USER || 'HumoyunMirzo' }}
+      - name: Publish to nuget.org
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+          PACKAGE_VERSION: ${{ needs.version.outputs.version }}
+        run: dotnet nuget push "artifacts/packages/Swealium.$PACKAGE_VERSION.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate --timeout 300
