@@ -4,6 +4,8 @@ namespace Swealium.Graphics;
 internal sealed class SkiaDrawingContext(SKCanvas canvas) : DrawingContext
 {
     private bool active = true;
+    private DrawingDetail detail;
+    public override DrawingDetail PolylineDetail {get{Verify();return detail;}set{Verify();if(!Enum.IsDefined(value))throw new ArgumentOutOfRangeException(nameof(value));detail=value;}}
     private bool antiAliasing = SwealiumApplication.AntiAliasing;
     public override bool AntiAliasing { get { Verify(); return antiAliasing; } set { Verify(); antiAliasing = value; } }
     internal void End() => active = false;
@@ -46,6 +48,46 @@ internal sealed class SkiaDrawingContext(SKCanvas canvas) : DrawingContext
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(thickness);
         using var paint = Paint(color, new(Math.Min(start.X,end.X),Math.Min(start.Y,end.Y),Math.Max(thickness,Math.Abs(end.X-start.X)),Math.Max(thickness,Math.Abs(end.Y-start.Y))), thickness);
         canvas.DrawLine(start.X, start.Y, end.X, end.Y, paint);
+    }
+    public override void DrawPoints(PointBuffer points,Color color,float size=1,PointShape shape=PointShape.Square,Rect? clip=null)
+    {
+        Verify();if(!Enum.IsDefined(shape))throw new ArgumentOutOfRangeException(nameof(shape));
+        Batch(points,color,size,shape==PointShape.Round?PathLineCap.Round:PathLineCap.Square,SKPointMode.Points,false,clip);
+    }
+    public override void DrawLines(PointBuffer points,Color color,float width=1,PathLineCap cap=PathLineCap.Flat,Rect? clip=null)
+    {
+        Verify();ArgumentNullException.ThrowIfNull(points);if(points.Count%2!=0)throw new ArgumentException("Line batches require point pairs.",nameof(points));
+        Batch(points,color,width,cap,SKPointMode.Lines,false,clip);
+    }
+    public override void DrawPolyline(PointBuffer points,Color color,float width=1,bool closed=false,PathLineCap cap=PathLineCap.Flat,Rect? clip=null)
+        =>Batch(points,color,width,cap,SKPointMode.Polygon,closed,clip);
+    private void Batch(PointBuffer points,Color color,float width,PathLineCap cap,SKPointMode mode,bool closed,Rect? clip)
+    {
+        Verify();ArgumentNullException.ThrowIfNull(points);
+        if(!float.IsFinite(width)||width<0||!Enum.IsDefined(cap))throw new ArgumentOutOfRangeException(nameof(width));
+        if(clip is {} area)ImageLayout.ValidateRect(area);
+        if(points.Count==0||(mode!=SKPointMode.Points&&points.Count<2))return;
+        using var paint=GradientPaint.Create(color,points.Bounds,AntiAliasing,width);
+        paint.Style=SKPaintStyle.Stroke;paint.StrokeWidth=width;
+        paint.StrokeCap=cap switch{PathLineCap.Round=>SKStrokeCap.Round,PathLineCap.Square=>SKStrokeCap.Square,_=>SKStrokeCap.Butt};
+        int saved=canvas.Save();
+        try
+        {
+            if(clip is {} bounds)canvas.ClipRect(ToRect(bounds));
+            var geometry=points;
+            if(mode==SKPointMode.Polygon&&!closed&&detail==DrawingDetail.Automatic&&points.IsXOrdered)
+            {
+                var localClip=canvas.LocalClipBounds;var matrix=canvas.TotalMatrix;
+                float left=Math.Max(points.Bounds.X,localClip.Left-width),right=Math.Min(points.Bounds.X+points.Bounds.Width,localClip.Right+width);
+                if(right<left)return;
+                double pixels=(right-left)*Math.Sqrt((double)matrix.ScaleX*matrix.ScaleX+(double)matrix.SkewY*matrix.SkewY);
+                int columns=(int)Math.Clamp(Math.Ceiling(pixels),1,32768);
+                geometry=points.ForRendering(columns,new(left,0,Math.Max(0,right-left),0));
+            }
+            canvas.DrawPoints(mode,geometry.NativePoints,paint);
+            if(closed&&points.Count>2)canvas.DrawLine(points.NativePoints[^1],points.NativePoints[0],paint);
+        }
+        finally{canvas.RestoreToCount(saved);}
     }
     public override void DrawText(string text, Point baseline, Color color, float fontSize = 16)
     {

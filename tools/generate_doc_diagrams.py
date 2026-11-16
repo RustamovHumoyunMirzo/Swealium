@@ -301,6 +301,27 @@ body += text(40,530,"Ancestor clips still apply. Outline supports Solid, Dashed,
 body += text(40,575,"Ghost policy affects pointer targets; ancestor bubbling still uses Handled.",19)
 figures["pointer-outline.svg"] = frame("Uniform outline and pointer-transparent overlays", "A single-width rounded outline sits beyond the widget with a visible offset gap. A transparent ghost overlay lets a pointer target the lower widget. ConsumePointer true targets the top visual; false skips its entire pointer subtree. Ancestor clips and event Handled remain independent.",body,height=610)
 
+body = box(40,100,280,70,"100K / 1M data samples")+arrow(320,135,380,135)
+body += box(380,100,280,70,"Reusable PointBuffer")+arrow(660,135,720,135)
+body += box(720,100,280,70,"One DrawingCanvas")
+body += box(40,235,610,255,"","#eef4ff","#6286ba")+text(60,270,"Screen-width detail preserves peaks",22,weight="600")
+samples=[(70+i*2.65,365+42*math.sin(i*.15)+12*math.sin(i*1.7)) for i in range(201)]
+samples[99]=(samples[99][0],285);samples[100]=(samples[100][0],455)
+path='M'+' L'.join(f'{x:.1f} {y:.1f}' for x,y in samples)
+body += f'<path d="{path}" fill="none" stroke="#a9b7c9" stroke-width="2"/>'
+reduced=[]
+for start in range(0,len(samples),12):
+    stop=min(len(samples),start+12);indices=sorted(set([start,stop-1,min(range(start,stop),key=lambda i:samples[i][1]),max(range(start,stop),key=lambda i:samples[i][1])]))
+    reduced.extend(samples[i] for i in indices)
+path='M'+' L'.join(f'{x:.1f} {y:.1f}' for x,y in reduced)
+body += f'<path d="{path}" fill="none" stroke="#466fb3" stroke-width="2.2"/>'
+body += box(700,250,300,65,"Scatter: keep every sample","#e6f5ef","#4a9784")
+body += box(700,350,300,65,"Plots: cached automatic detail","#e6f5ef","#4a9784")
+body += text(700,470,"Exact geometry is an explicit option.",17)
+body += text(40,555,"Prepare/project when data or viewport changes; reuse batches in unchanged frames.",20)
+body += text(40,603,"No widget or managed paint object per data point. CPU and GPU drawing paths.",19)
+figures["drawing-canvas.svg"] = frame("Immediate-mode batched canvas", "Large data lives in a reusable point buffer and is drawn by one canvas widget. Scatter batches retain every sample; dense X-ordered polylines can use a cached screen-width min/max envelope preserving spikes. Exact detail remains available.",body,height=640)
+
 OUT.mkdir(parents=True, exist_ok=True)
 for name, value in figures.items():
     target = OUT / name

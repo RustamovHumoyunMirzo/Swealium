@@ -3,6 +3,8 @@ namespace Swealium.Graphics;
 /// <summary>Frame-scoped drawing in logical coordinates. Do not retain a context after Draw returns.</summary>
 public abstract class DrawingContext
 {
+    /// <summary>Dense polyline detail. Exact by default; DrawingCanvas scopes its own policy.</summary>
+    public virtual DrawingDetail PolylineDetail {get;set;}=DrawingDetail.Exact;
     /// <summary>Edge smoothing for subsequent operations in this context. Initialized from the application default.</summary>
     public virtual bool AntiAliasing { get; set; } = SwealiumApplication.AntiAliasing;
     public void FillRectangle(Rect bounds, Color color, float cornerRadius = 0) => FillRectangle(bounds, color, new CornerRadii(cornerRadius));
@@ -11,6 +13,9 @@ public abstract class DrawingContext
         StrokeRectangle(bounds, color, new CornerRadii(cornerRadius), thickness);
     public abstract void StrokeRectangle(Rect bounds, Color color, CornerRadii radii, float thickness = 1);
     public abstract void FillEllipse(Rect bounds, Color color);
+    public virtual void DrawPoints(PointBuffer points,Color color,float size=1,PointShape shape=PointShape.Square,Rect? clip=null)=>throw new NotSupportedException("This context does not implement point batches.");
+    public virtual void DrawLines(PointBuffer points,Color color,float width=1,PathLineCap cap=PathLineCap.Flat,Rect? clip=null)=>throw new NotSupportedException("This context does not implement line batches.");
+    public virtual void DrawPolyline(PointBuffer points,Color color,float width=1,bool closed=false,PathLineCap cap=PathLineCap.Flat,Rect? clip=null)=>throw new NotSupportedException("This context does not implement polyline batches.");
     public abstract void DrawLine(Point start, Point end, Color color, float thickness = 1);
     /// <summary>Draw shaped text at a baseline origin.</summary>
     public abstract void DrawText(string text, Point baseline, Color color, float fontSize = 16);

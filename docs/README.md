@@ -26,6 +26,7 @@ Documentation for **0.1.0-alpha.1 / .NET 10**. This describes the implemented AP
 | [Gradients](gradients.md) | Seven geometries, stops, repeat/mirror/decal, existing Color properties |
 | [Transforms and overscroll](transforms-and-overscroll.md) | Translate/scale/rotate, inverse input mapping, scroll chaining and containment |
 | [Pointer consumption and outlines](pointers-and-outlines.md) | Ghost overlays, capture cleanup, uniform styled outlines, clipping and offset |
+| [DrawingCanvas and large data](widgets/drawing-canvas.md) | Immediate-mode surface, 100K+ point batches and cached plot detail |
 | [Drawing](drawing.md) | Logical units, frame-scoped context, shapes, text, radii, DPI |
 | [Images and vectors](images-and-vectors.md) | Raster formats, Bitmap, offscreen drawing, SVG/SVGZ, paths, scaling, ownership |
 | [Cursors](cursors.md) | System types, inheritance/capture, window defaults, hidden and custom bitmap cursors |
@@ -49,6 +50,7 @@ The curated contract pages explain defaults, parameters, results, exceptions, th
 - [Widgets and layout contracts](api/widgets.md)
 - [Grid contracts](api/grid.md)
 - [Graphics and value-type contracts](api/graphics.md)
+- [Point-buffer and batch drawing contracts](api/point-buffers.md)
 - [Bitmap/vector/path contracts](api/media.md)
 - [Gradient contracts](api/gradients.md)
 - [Text, editing, composition, and clipboard contracts](api/text.md)

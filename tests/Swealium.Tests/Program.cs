@@ -7,6 +7,8 @@ using Swealium.Input;
 using Swealium.Native;
 using Swealium.UI;
 
+if(args.Contains("--canvas-benchmark")){Swealium.Tests.DrawingCanvasTests.Benchmark();return 0;}
+if(args.Contains("--canvas-benchmark-gpu")){Swealium.Tests.DrawingCanvasTests.BenchmarkGpu();return 0;}
 if (args.Contains("--gpu-rendering"))
 {
     Swealium.Tests.RenderingOptionsTests.NativeGpu();
@@ -97,6 +99,10 @@ Run("overscroll auto/chain/contain/none, residual input and inherited policy",Sw
 Run("ConsumePointer ghost targeting, bubbling, subtree policy and capture cleanup",Swealium.Tests.PointerOutlineTests.GhostPointers);
 Run("outline styles, gap, radii, opacity, gradients and hit/layout independence",Swealium.Tests.PointerOutlineTests.PixelsAndStyles);
 Run("outline ancestor clipping and transformed painting",Swealium.Tests.PointerOutlineTests.ParentClipAndTransforms);
+Run("point buffers: validation, reuse, projection and peak-preserving reduction",Swealium.Tests.DrawingCanvasTests.Buffers);
+Run("drawing canvas callbacks, batch coverage, clipping and context lifetime",Swealium.Tests.DrawingCanvasTests.PixelsAndLifetime);
+Run("100K point rendering, bounded frame allocations and recorded batch ownership",Swealium.Tests.DrawingCanvasTests.LargeBatches);
+Run("automatic dense-polyline detail, cache reuse, source updates and exact opt-out",Swealium.Tests.DrawingCanvasTests.AutomaticDetail);
 Console.WriteLine($"{result.Passed} passed; {result.Failed} failed.");
 return result.Failed == 0 ? 0 : 1;
 

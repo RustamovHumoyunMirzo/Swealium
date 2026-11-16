@@ -4,6 +4,47 @@ using Swealium.Input;
 using Swealium.UI;
 
 bool smokeTest = args.Contains("--smoke-test");
+if(args.Contains("--canvas-demo"))
+{
+    SwealiumApplication.Run(new(){Title="Swealium - 100K+ immediate drawing",Width=1000,Height=720},window=>
+    {
+        PointBuffer curve=new(Array.Empty<Point>()),scatter=new(Array.Empty<Point>());int count=100_000;bool showScatter=false;
+        void Generate(int size)
+        {
+            count=size;var line=new Point[size];var cloud=new Point[size];var random=new Random(42);
+            for(int i=0;i<size;i++){float x=(float)i/(size-1);line[i]=new(x,.5f+MathF.Sin(x*60)*.28f+MathF.Sin(x*3000)*.07f);cloud[i]=new(random.NextSingle(),random.NextSingle());}
+            line[size/2]=line[size/2] with{Y=.03f};line[size/2+1]=line[size/2+1] with{Y=.97f};curve=new(line);scatter=new(cloud);
+        }
+        Generate(count);
+        var root=new Container{Padding=new(22),Gap=14,Background=new(21,27,38)};
+        root.Children.Add(new Text{Content="DrawingCanvas: one widget, 100K to 1M samples",Style=new(){FontSize=27,Foreground=Color.White}});
+        var status=new Text{Style=new(){Foreground=new(180,205,230)}};
+        PointBuffer? projected=null,previousSource=null;Rect previousArea=default;Point? pointer=null;
+        var canvas=new DrawingCanvas{Weight=1,WeightBasis=WeightBasis.Zero,Background=new(12,18,28),Radii=new(12),Stroke=new(1,new(65,90,125))};
+        canvas.Paint+=(drawing,bounds)=>
+        {
+            var area=new Rect(bounds.X+14,bounds.Y+14,Math.Max(0,bounds.Width-28),Math.Max(0,bounds.Height-28));var source=showScatter?scatter:curve;
+            if(projected is null||source!=previousSource||area!=previousArea)
+            {projected=source.Project(area,new(0,0,1,1));previousSource=source;previousArea=area;}
+            drawing.AntiAliasing=!showScatter;
+            if(showScatter)drawing.DrawPoints(projected,new(80,195,235),1,clip:area);
+            else drawing.DrawPolyline(projected,new(80,205,240),1,clip:area);
+            if(pointer is {} position&&area.Contains(position))
+            {drawing.DrawLine(new(position.X,area.Y),new(position.X,area.Y+area.Height),new(225,180,100,130));drawing.DrawLine(new(area.X,position.Y),new(area.X+area.Width,position.Y),new(225,180,100,130));}
+        };
+        canvas.PointerInput+=e=>{if(e.Kind==PointerEventKind.Move)pointer=e.Position;else if(e.Kind==PointerEventKind.Leave)pointer=null;};
+        void Status()=>status.Content=$"{count:N0} samples | {(showScatter?"scatter (all points)":"ordered polyline")} | {canvas.Detail} | {(window.IsHardwareAccelerated?"GPU-backed Skia":"CPU raster")}";
+        var controls=new Container{Layout=LayoutMode.Horizontal,Height=44,Gap=10};
+        var smaller=new Button{Text="100K samples",Weight=1};smaller.Click+=()=>{Generate(100_000);Status();};
+        var larger=new Button{Text="1M samples",Weight=1};larger.Click+=()=>{Generate(1_000_000);Status();};
+        var mode=new Button{Text="Plot / scatter",Weight=1};mode.Click+=()=>{showScatter=!showScatter;Status();};
+        var detail=new Button{Text="Auto / exact (slower)",Weight=1};detail.Click+=()=>{canvas.Detail=canvas.Detail==DrawingDetail.Automatic?DrawingDetail.Exact:DrawingDetail.Automatic;Status();};
+        controls.Children.Add(smaller);controls.Children.Add(larger);controls.Children.Add(mode);controls.Children.Add(detail);
+        root.Children.Add(controls);root.Children.Add(canvas);root.Children.Add(status);window.Content=root;Status();
+        if(smokeTest){int frames=0;window.Paint+=(_,_)=>{if(++frames==3)window.RequestClose();};}
+    });
+    return;
+}
 if(args.Contains("--outline-demo"))
 {
     SwealiumApplication.Run(new(){Title="Swealium - outlines and ghost pointers",Width=920,Height=760},window=>

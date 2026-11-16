@@ -15,6 +15,7 @@ Every exported widget is documented here, including the abstract base. Each page
 | [Button](button.md) | Widget | Pointer/keyboard activation and shaped caption |
 | [Text](text.md) | Widget | Shaped paragraphs, bidi, wrapping, styled HTML text |
 | [TextBox](text-box.md) | Widget | Plain-text editing, selection, clipboard, history, preedit and candidates |
+| [DrawingCanvas](drawing-canvas.md) | Widget | Immediate-mode drawing callbacks, reusable large batches and automatic dense-plot detail |
 | [Image](image.md) | Widget | Raster bitmaps, cropping, interpolation, aspect-preserving scaling |
 | [VectorGraphics](vector-graphics.md) | Widget | Static SVG/SVGZ and recorded vector display |
 

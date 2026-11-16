@@ -88,3 +88,5 @@ See [widget transforms and overscroll policies](../transforms-and-overscroll.md)
 ## Outline
 
 Readonly record struct Outline(float width, Color color, StrokeStyle style=Solid, float offset=0) has get-only Width, Color, Style, Offset. Width is finite nonnegative; Offset finite signed; Style a defined StrokeStyle. Default value is off (Width=0). Invalid arguments throw ArgumentOutOfRangeException. Color supports gradients. Geometry follows widget radii and reserves no space. See [outline contracts](../pointers-and-outlines.md#uniform-outline).
+
+PointBuffer, DrawingDetail, PointShape, DrawPoints/DrawLines/DrawPolyline and automatic detail are described in [batch drawing contracts](point-buffers.md).
