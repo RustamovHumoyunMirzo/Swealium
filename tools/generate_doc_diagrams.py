@@ -322,6 +322,21 @@ body += text(40,555,"Prepare/project when data or viewport changes; reuse batche
 body += text(40,603,"No widget or managed paint object per data point. CPU and GPU drawing paths.",19)
 figures["drawing-canvas.svg"] = frame("Immediate-mode batched canvas", "Large data lives in a reusable point buffer and is drawn by one canvas widget. Scatter batches retain every sample; dense X-ordered polylines can use a cached screen-width min/max envelope preserving spikes. Exact detail remains available.",body,height=640)
 
+body = box(40,95,960,62,"PrepareDraw: sample backdrop before foreground layers", "#e6f5ef", "#4a9784")
+body += box(40,190,960,220,"", "#eef1f6", "#99a7b6")+text(60,220,"A: outer effect scope",20,weight="600")
+body += box(105,245,830,115,"", "#eaf2ff", "#6286ba")+text(125,274,"B: inner effect scope",20,weight="600")
+body += box(160,295,720,45,"Draw / Children / Overlay / Stroke / Outline", "#fff2d9", "#bd8a35")
+body += text(60,390,"B completes first; its output is filtered by A. Group opacity blends once.",19)
+body += text(40,455,"Backdrop blur: background color alpha controls how much is revealed",22,weight="600")
+body += '<defs><pattern id="stripes" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="7" height="14" fill="#6393bd"/><rect x="7" width="7" height="14" fill="#c79566"/></pattern><filter id="blur"><feGaussianBlur stdDeviation="4"/></filter><clipPath id="glass"><rect x="40" y="480" width="450" height="95" rx="18"/></clipPath></defs>'
+body += '<g clip-path="url(#glass)"><rect x="20" y="460" width="490" height="135" fill="url(#stripes)" filter="url(#blur)"/><rect x="40" y="480" width="450" height="95" rx="18" fill="white" fill-opacity=".2"/></g>'
+body += '<rect x="550" y="480" width="450" height="95" rx="18" fill="white" stroke="#99a7b6"/>'
+body += text(265,535,"Transparent: blurred scene visible",20,anchor="middle",weight="600")
+body += text(775,535,"Opaque: blurred scene covered",20,anchor="middle",weight="600")
+body += text(40,620,"Progressive blur: sharp to soft, following spatial gradient stops.",20)
+body += text(40,657,"Widget.Opacity fades the completed result; it never changes blur radius.",19)
+figures["widget-effects.svg"] = frame("Widget effect stack and backdrop transparency", "Backdrop preparation runs before nested foreground filters. The first stack entry is the outer effect, applied to the inner effect's completed subtree including overlay, stroke and outline. Transparent background color reveals blurred scene content; opaque color covers it. Progressive blur varies Gaussian radius through spatial stops, independently of widget opacity.",body,height=690)
+
 OUT.mkdir(parents=True, exist_ok=True)
 for name, value in figures.items():
     target = OUT / name

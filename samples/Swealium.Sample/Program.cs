@@ -2,8 +2,46 @@ using Swealium;
 using Swealium.Graphics;
 using Swealium.Input;
 using Swealium.UI;
+using Swealium.UI.Effects;
 
 bool smokeTest = args.Contains("--smoke-test");
+if(args.Contains("--effects-demo"))
+{
+    SwealiumApplication.Run(new(){Title="Swealium - widget effects",Width=1060,Height=800},window=>
+    {
+        var root=new Container{Padding=new(24),Gap=14,Background=new(20,27,40)};
+        root.Children.Add(new Text{Content="Widget effects: glass, progressive blur, shadows and color",Style=new(){FontSize=26,Foreground=Color.White}});
+        var stage=new Container{Layout=LayoutMode.Absolute,Weight=1,WeightBasis=WeightBasis.Zero,Radii=new(16)};
+        stage.Children.Add(new DrawingCanvas((c,b)=>
+        {
+            c.FillRectangle(b,Gradient.Diagonal(new(30,100,180),new(120,50,160),new(10,135,135)));
+            for(int x=0;x<b.Width;x+=16)c.FillRectangle(new(x,0,6,b.Height),new(255,255,255,100));
+            c.FillEllipse(new(90,45,210,210),new(255,160,80));c.FillEllipse(new(600,170,240,240),new(50,220,180));
+        }){WidthSizing=SizingMode.Fill,HeightSizing=SizingMode.Fill,ConsumePointer=false});
+        Container Card(float x,float y,string title)
+        {
+            var card=new Container{X=x,Y=y,Width=285,Height=170,Padding=new(20),Gap=10,Radii=new(20),Background=new(255,255,255,45),Stroke=new(1,new(255,255,255,100))};
+            card.Children.Add(new Text{Content=title,Style=new(){FontSize=23,Foreground=Color.White}});
+            card.Children.Add(new Text{Content="Live content and rounded edges",Style=new(){FontSize=16,Foreground=Color.White}});
+            stage.Children.Add(card);return card;
+        }
+        var glass=Card(30,35,"Backdrop blur");glass.Effects.Add(new DropShadow{Radius=new(12,12),Offset=new(0,7)});glass.Effects.Add(new BackdropBlur(9));
+        var progressive=Card(355,35,"Progressive backdrop");progressive.Effects.Add(new ProgressiveBlur(BlurGradient.Horizontal(new(0,0),new(.25f,0),new(1,14)),BlurTarget.Backdrop));
+        var shadow=Card(680,35,"Alpha-shaped shadow");shadow.Background=new(45,60,100);shadow.Radii=new(40,5,40,5);shadow.Effects.Add(new DropShadow{Color=new(0,0,0,170),Radius=new(10,10),Offset=new(10,12)});
+        var layer=Card(30,260,"Layer blur");layer.Background=new(80,140,220);layer.Effects.Add(new LayerBlur(2));
+        var fading=Card(355,260,"Progressive layer");fading.Background=new(90,100,200);fading.Effects.Add(new ProgressiveBlur(BlurGradient.Vertical(new(0,0),new(.35f,0),new(1,9))){EdgeMode=BlurEdgeMode.Transparent});
+        var gray=Card(680,260,"Grayscale subtree");gray.Background=new(220,100,45);gray.Effects.Add(new ColorFilter(ColorMatrix.Grayscale()));
+        root.Children.Add(stage);
+        var status=new Text{Content="Glass background alpha: 45/255. Widget opacity: 1. Blur radius stays constant.",Style=new(){Foreground=new(190,215,240)}};
+        var controls=new Container{Layout=LayoutMode.Horizontal,Height=44,Gap=12};
+        var alpha=new Button{Text="Toggle glass color alpha",Weight=1};alpha.Click+=()=>{glass.Background=glass.Background.A==255?new(255,255,255,45):Color.White;status.Content=$"Glass color alpha: {glass.Background.A}/255. Widget opacity: {glass.Opacity}.";};
+        var opacity=new Button{Text="Toggle widget opacity",Weight=1};opacity.Click+=()=>{glass.Opacity=glass.Opacity==1?.5f:1;status.Content=$"Glass color alpha: {glass.Background.A}/255. Widget opacity: {glass.Opacity}.";};
+        var enabled=new Button{Text="Enable / disable effects",Weight=1};bool effectsEnabled=true;enabled.Click+=()=>{effectsEnabled=!effectsEnabled;foreach(var card in new[]{glass,progressive,shadow,layer,fading,gray})foreach(var effect in card.Effects)effect.IsEnabled=effectsEnabled;};
+        controls.Children.Add(alpha);controls.Children.Add(opacity);controls.Children.Add(enabled);root.Children.Add(controls);root.Children.Add(status);window.Content=root;
+        if(smokeTest){int frames=0;window.Paint+=(_,_)=>{if(++frames==3)window.RequestClose();};}
+    });
+    return;
+}
 if(args.Contains("--canvas-demo"))
 {
     SwealiumApplication.Run(new(){Title="Swealium - 100K+ immediate drawing",Width=1000,Height=720},window=>

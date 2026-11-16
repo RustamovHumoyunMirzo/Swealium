@@ -75,6 +75,8 @@ button.ResetStroke();   // restore automatic focus styling
 
 ## Appearance and input
 
+`Effects` is an initially empty WidgetEffectCollection. Add custom WidgetEffect hooks or built-in LayerBlur, BackdropBlur, ProgressiveBlur, DropShadow and ColorFilter. Effects wrap the full rendered subtree and do not change layout or input bounds. See [effect ordering, transparency, scopes and complete contracts](../effects.md).
+
 Cursor is a nullable Swealium.Input.Cursor. Null inherits from an ancestor or window default; setting a disposed cursor is rejected. Button/TextBox initialize Pointer/Text respectively. Capture retains the drag source's cursor; native resources belong to the host and custom descriptors remain caller-owned. See [all cursor types and bitmap cursors](../cursors.md).
 
 `Radii` defaults to zero; `ClipToBounds=true` clips the subtree and hit testing to the normalized rounded shape. `ContainsPoint(Point)` is virtual and uses that shape by default. Overriding it changes hit membership, not drawing. ScrollContainer additionally clips descendants to its viewport even with ClipToBounds=false.

@@ -57,7 +57,7 @@ public sealed class VectorImage:IDisposable
         ImageLayout.ValidateRect(viewBox);if(viewBox.Width<=0||viewBox.Height<=0)throw new ArgumentOutOfRangeException(nameof(viewBox));ArgumentNullException.ThrowIfNull(draw);
         using var recorder=new SKPictureRecorder();var canvas=recorder.BeginRecording(SKRect.Create(viewBox.X,viewBox.Y,viewBox.Width,viewBox.Height));
         var context=new SkiaDrawingContext(canvas);
-        try{draw(context);return new(recorder.EndRecording());}finally{context.End();}
+        try{draw(context);context.End();return new(recorder.EndRecording());}finally{context.End();}
     }
     public Bitmap Rasterize(int width,int height,ImageStretch stretch=ImageStretch.Uniform)
     {

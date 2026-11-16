@@ -1,14 +1,15 @@
 using SkiaSharp;
 namespace Swealium.Graphics;
 
-internal sealed class SkiaDrawingContext(SKCanvas canvas) : DrawingContext
+internal sealed partial class SkiaDrawingContext(SKCanvas canvas) : DrawingContext
 {
+    private readonly int initialSaveCount = canvas.SaveCount;
     private bool active = true;
     private DrawingDetail detail;
     public override DrawingDetail PolylineDetail {get{Verify();return detail;}set{Verify();if(!Enum.IsDefined(value))throw new ArgumentOutOfRangeException(nameof(value));detail=value;}}
     private bool antiAliasing = SwealiumApplication.AntiAliasing;
     public override bool AntiAliasing { get { Verify(); return antiAliasing; } set { Verify(); antiAliasing = value; } }
-    internal void End() => active = false;
+    internal void End() { if (!active) return; canvas.RestoreToCount(initialSaveCount); active = false; }
     private void Verify() => ObjectDisposedException.ThrowIf(!active, this);
     private static SKRect ToRect(Rect r) => SKRect.Create(r.X, r.Y, r.Width, r.Height);
     private SKPaint Paint(Color color,Rect bounds,float thickness=0)=>GradientPaint.Create(color,bounds,AntiAliasing,thickness);

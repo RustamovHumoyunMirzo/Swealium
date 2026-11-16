@@ -23,6 +23,7 @@ Documentation for **0.1.0-alpha.1 / .NET 10**. This describes the implemented AP
 | [Multiple pointers](multiple-pointers.md) | Mouse/touch/pen identity, per-contact capture/hover, pressure/tilt, native routing |
 | [Accessibility boundary](accessibility.md) | Semantic snapshots, actions, notifications, owned adapter lifecycle; native providers remain separate |
 | [Rendering settings](rendering.md) | Application/context anti-aliasing, GPU selection, diagnostics, software fallback |
+| [Widget effects](effects.md) | Custom effect stacks, layer/backdrop/progressive blur, shadows, color matrices and drawing scopes |
 | [Gradients](gradients.md) | Seven geometries, stops, repeat/mirror/decal, existing Color properties |
 | [Transforms and overscroll](transforms-and-overscroll.md) | Translate/scale/rotate, inverse input mapping, scroll chaining and containment |
 | [Pointer consumption and outlines](pointers-and-outlines.md) | Ghost overlays, capture cleanup, uniform styled outlines, clipping and offset |

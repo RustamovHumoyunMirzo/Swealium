@@ -7,6 +7,8 @@ namespace Swealium.UI;
 /// <summary>A retained visual. Bounds are relative to the parent; drawing and input are local.</summary>
 public abstract class Widget
 {
+    /// <summary>Effects wrapping this widget and its descendants. Index zero is the outermost scope.</summary>
+    public WidgetEffectCollection Effects { get; } = new();
     private static long nextSemanticId;
     internal long SemanticId {get;}=Interlocked.Increment(ref nextSemanticId);
     public AccessibilityProperties Accessibility {get;}=new();

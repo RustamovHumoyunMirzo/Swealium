@@ -3,6 +3,16 @@ namespace Swealium.Graphics;
 /// <summary>Frame-scoped drawing in logical coordinates. Do not retain a context after Draw returns.</summary>
 public abstract class DrawingContext
 {
+    /// <summary>Scoped state must be disposed in reverse order before the callback returns.</summary>
+    public virtual IDisposable PushClip(Rect bounds, CornerRadii radii = default) => throw new NotSupportedException();
+    public virtual IDisposable PushTranslation(Point offset) => throw new NotSupportedException();
+    public virtual IDisposable PushOpacity(float opacity) => throw new NotSupportedException();
+    public virtual IDisposable PushBlur(Size radius, BlurEdgeMode edgeMode = BlurEdgeMode.Transparent) => throw new NotSupportedException();
+    public virtual IDisposable PushProgressiveBlur(BlurGradient gradient, Rect bounds, BlurEdgeMode edgeMode = BlurEdgeMode.Clamp) => throw new NotSupportedException();
+    public virtual IDisposable PushDropShadow(Point offset, Size radius, Color color, bool shadowOnly = false) => throw new NotSupportedException();
+    public virtual IDisposable PushColorMatrix(ColorMatrix matrix) => throw new NotSupportedException();
+    public virtual void DrawBackdropBlur(Rect bounds, CornerRadii radii, Size radius, BlurEdgeMode edgeMode = BlurEdgeMode.Clamp) => throw new NotSupportedException();
+    public virtual void DrawBackdropBlur(Rect bounds, CornerRadii radii, BlurGradient gradient, BlurEdgeMode edgeMode = BlurEdgeMode.Clamp) => throw new NotSupportedException();
     /// <summary>Dense polyline detail. Exact by default; DrawingCanvas scopes its own policy.</summary>
     public virtual DrawingDetail PolylineDetail {get;set;}=DrawingDetail.Exact;
     /// <summary>Edge smoothing for subsequent operations in this context. Initialized from the application default.</summary>

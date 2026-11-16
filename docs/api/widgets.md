@@ -10,6 +10,8 @@ The [widget reference hub](../widgets/README.md) provides a dedicated page for e
 
 Abstract retained visual. The protected default constructor creates no native resources. Derived types implement Draw(DrawingContext).
 
+Every widget also exposes `WidgetEffectCollection Effects { get; }`, initially empty. See [effect lifecycle, stack order and built-ins](../effects.md) for all contracts.
+
 ### Requested layout inputs
 
 | Property | Default | Validation/meaning |

@@ -42,6 +42,8 @@ Bitmap drawing, image decoding, text layout/shaping, and vector recording remain
 
 ## Verification
 
+All widgets support [effect stacks](effects.md), including layer/backdrop/progressive blur, alpha-shaped shadows and color filters. The same public drawing scopes work with CPU and GPU rendering.
+
 The regular test suite checks aliased/smoothed pixels and glyphs, context isolation/lifetime, forced software, and dummy-driver fallback. On a graphical desktop run:
 
 ```sh
