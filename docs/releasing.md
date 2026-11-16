@@ -27,7 +27,7 @@ The new-package scope is needed for the first publication; future versions also 
 1. Set the csproj Version, update version-specific install/docs examples, and commit to main.
 2. Wait for the ordinary build workflow to pass.
 3. Publish a GitHub release with the matching tag, such as **v0.1.0**. Plain **0.1.0** is also accepted. The tagged commit must belong to main's history.
-4. The `Publish NuGet release` workflow validates the tag/version and runs the reusable three-platform build, integration tests, documentation checks, sample smokes and NuGet-only consumer test.
+4. The `Publish NuGet release` workflow validates the tag/version and requires a successful full build workflow for that exact commit. It reuses an existing successful push build, or runs the reusable three-platform build, integration tests, documentation checks, sample smokes and NuGet-only consumer test when none exists.
 5. Only when validation succeeds does it build the release package/symbols from that exact tag, attach them to the GitHub release, authenticate through OIDC, and push to nuget.org.
 
 The checked project version, release tag and NuGet version must agree. A mismatched tag fails before publishing; the workflow never silently packages a different version. The GitHub release name can contain descriptive text; its **tag** supplies the checked version. Do not move an already-published tag or attempt to replace a NuGet version; package versions are immutable.
@@ -56,6 +56,7 @@ For headless execution set SDL_VIDEO_DRIVER=dummy and SDL_RENDER_DRIVER=software
 
 ## Retry a failed publication
 
-Fix missing trusted-policy/account configuration, then re-run the failed GitHub job. The workflow also offers `workflow_dispatch` with an existing release tag. It checks and builds that tag, requires matching version and main ancestry, reruns validation, and uploads/pushes the matching artifacts. Its official NuGet push uses `--skip-duplicate` to permit safe retries after a previous accepted upload. A manual retry still requires the GitHub release to exist for asset attachment.
+Fix missing trusted-policy/account configuration, then re-run the failed GitHub job. The workflow also offers `workflow_dispatch` with an existing release tag. It checks and builds that tag, requires matching version and main ancestry, requires successful full CI for the exact commit, and uploads/pushes the matching artifacts. Its official NuGet push uses `--skip-duplicate` to permit safe retries after a previous accepted upload. A manual retry still requires the GitHub release to exist for asset attachment.
 
 If tests/package checks fail, fix them on main and create the appropriate new release commit/version. Do not force a different package body into an existing published version. Do not commit credentials or paste API keys into source/YAML.
+

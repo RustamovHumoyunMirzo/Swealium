@@ -20,8 +20,12 @@ concurrency:
 jobs:
   version:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     outputs:
       version: ${{ steps.version.outputs.version }}
+      validated: ${{ steps.ci.outputs.validated }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -37,15 +41,32 @@ jobs:
         run: |
           python tools/check_package.py --release-tag "$RELEASE_TAG"
           git merge-base --is-ancestor HEAD origin/main
+      - name: Find successful full CI for the exact release commit
+        id: ci
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha=$(git rev-parse HEAD)
+          run_url=$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/build.yml/runs" \
+            -f head_sha="$sha" -f event=push -f status=success -f per_page=100 \
+            --jq '.workflow_runs | map(select(.conclusion == "success" and .status == "completed")) | first | .html_url // empty')
+          if [ -n "$run_url" ]; then
+            echo "validated=true" >> "$GITHUB_OUTPUT"
+            echo "Full CI already passed for $sha: $run_url" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "validated=false" >> "$GITHUB_OUTPUT"
+          fi
 
   validate:
     needs: version
+    if: needs.version.outputs.validated != 'true'
     uses: ./.github/workflows/build.yml
     with:
       ref: ${{ github.event.release.tag_name || inputs.tag }}
 
   publish:
     needs: [version, validate]
+    if: always() && !cancelled() && needs.version.result == 'success' && (needs.version.outputs.validated == 'true' || needs.validate.result == 'success')
     runs-on: ubuntu-latest
     environment: nuget
     permissions:
