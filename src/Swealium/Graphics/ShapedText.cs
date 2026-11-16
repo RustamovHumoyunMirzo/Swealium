@@ -19,8 +19,8 @@ public sealed class ShapedText : IDisposable
         {
             var typeface=lease.Typeface;
             nativeFont=new(typeface,fontSize){Hinting=(SKFontHinting)Options.Hinting,Subpixel=Options.SubpixelPositioning,LinearMetrics=Options.LinearMetrics};Metrics=Font.Metrics(nativeFont);
-            using var tables=new TableSource(typeface);
-            using var face=new HB.Face((_,tag)=>tables.Read((uint)tag));
+            using var fontData=OpenFontData(typeface,out int collectionIndex);
+            using var face=new HB.Face(fontData,collectionIndex);
             int units=typeface.UnitsPerEm>0?typeface.UnitsPerEm:1000;face.UnitsPerEm=units;
             using var shaper=new HB.Font(face);shaper.SetFunctionsOpenType();int scale=checked(units*64);shaper.SetScale(scale,scale);
             var variations=font.Variations.Select(v=>new HB.Variation{Tag=Font.Tag(v.Tag),Value=v.Value}).ToArray();if(variations.Length>0)shaper.SetVariations(variations);
@@ -30,7 +30,6 @@ public sealed class ShapedText : IDisposable
             if(Options.Script is {} script)buffer.Script=HB.Script.Parse(script);
             buffer.GuessSegmentProperties();Direction=buffer.Direction==HB.Direction.RightToLeft?TextDirection.RightToLeft:TextDirection.LeftToRight;
             var features=Options.Features.Select(f=>new HB.Feature(Font.Tag(f.Tag),f.Value,(uint)f.Start,f.End is {} end?(uint)end:uint.MaxValue)).ToArray();shaper.Shape(buffer,features);
-            if(tables.Error is not null)throw new InvalidDataException("A font table could not be read during shaping.",tables.Error);
             var infos=buffer.GlyphInfos;var advances=buffer.GlyphPositions;var glyphs=new ShapedGlyph[infos.Length];glyphIds=new ushort[infos.Length];positions=new SKPoint[infos.Length];
             double x=0,y=0,factor=(double)fontSize/scale;
             for(int i=0;i<infos.Length;i++)
@@ -48,28 +47,22 @@ public sealed class ShapedText : IDisposable
     }
     private static float Finite(double value)
     {if(!double.IsFinite(value)||value>float.MaxValue||value< -float.MaxValue)throw new ArgumentOutOfRangeException(nameof(value),"Shaped geometry exceeds the drawable range.");return (float)value;}
-    private static unsafe HB.Blob Table(SKTypeface face,uint tag)
+    private static HB.Blob OpenFontData(SKTypeface typeface,out int collectionIndex)
     {
-        if(face.GetTableSize(tag)==0)return HB.Blob.Empty;
-        var bytes=face.GetTableData(tag);if(bytes is null||bytes.Length==0)return HB.Blob.Empty;
-        fixed(byte* p=bytes)return new HB.Blob((nint)p,bytes.Length,HB.MemoryMode.Duplicate);
-    }
-    // Keep callback-owned blobs alive through shaping, then release them after the HB face/font.
-    private sealed class TableSource(SKTypeface typeface):IDisposable
-    {
-        private readonly Dictionary<uint,HB.Blob> blobs=new();
-        internal Exception? Error {get;private set;}
-        internal HB.Blob Read(uint tag)
+        // Own one complete font-data blob, rather than transferring callback-owned
+        // table handles between two native reference-counting systems. HarfBuzz's
+        // face retains this blob; disposal unwinds face -> blob -> backing stream/data.
+        var stream=typeface.OpenStream(out collectionIndex)??throw new InvalidDataException("The font cannot provide its encoded data.");
+        try
         {
-            try
-            {
-                if(blobs.TryGetValue(tag,out var found))return found;
-                if(typeface.GetTableSize(tag)==0)return HB.Blob.Empty;
-                var blob=Table(typeface,tag);blobs.Add(tag,blob);return blob;
-            }
-            catch(Exception error){Error??=error;return HB.Blob.Empty;}
+            nint memory=stream.GetMemoryBase();
+            if(memory!=0)return new HB.Blob(memory,stream.Length,HB.MemoryMode.ReadOnly,stream.Dispose);
+            var data=SKData.Create(stream)??throw new InvalidDataException("The font stream cannot be read.");
+            stream.Dispose();
+            try{return new HB.Blob(data.Data,checked((int)data.Size),HB.MemoryMode.ReadOnly,data.Dispose);}
+            catch{data.Dispose();throw;}
         }
-        public void Dispose(){foreach(var blob in blobs.Values)blob.Dispose();blobs.Clear();}
+        catch{stream.Dispose();throw;}
     }
     public string Text {get;}
     public float FontSize {get;}

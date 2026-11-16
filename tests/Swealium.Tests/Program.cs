@@ -36,6 +36,7 @@ Run("public API contains no backend types", PublicApi);
 Run("font loading, Aldo bytes, metadata, metrics, coverage and system matching",Swealium.Tests.FontTests.LoadingAndMetrics);
 Run("OpenType feature ranges, clusters, direction, spacing and variable axes",Swealium.Tests.FontTests.ShapingAndVariations);
 Run("font drawing, gradient glyph blobs, resource leases and text widgets",Swealium.Tests.FontTests.DrawingAndLifetime);
+Run("native font-data ownership under repeated shaping, disposal and forced GC",Swealium.Tests.FontTests.NativeLifetime);
 Run("ripple origin, expansion, fading, rounded clipping, gradients and group opacity",Swealium.Tests.RippleTests.Pixels);
 Run("ripple overlap limits, manual triggers, lifecycle and application clock",Swealium.Tests.RippleTests.Lifecycle);
 Run("animation timing, delay, repeat boundaries and reverse endpoints",Swealium.Tests.AnimationTests.Timeline);

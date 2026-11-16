@@ -67,4 +67,22 @@ internal static class FontTests
         using var font=Fixture();using var shaped=font.Shape("A",24);surface.Canvas.Clear(SKColors.Transparent);var drawing=new SkiaDrawingContext(surface.Canvas);try{drawing.DrawShapedText(shaped,new(2,25),new(255,0,0));}finally{drawing.End();}
         using var image=surface.Snapshot();using var pixels=SKBitmap.FromImage(image);Check(pixels.GetPixel(8,15).Red>240&&pixels.GetPixel(28,28).Alpha==0,"GPU draws the same font glyph blob with baseline positioning");
     }
+    internal static void NativeLifetime()
+    {
+        byte[][] sources=[File.ReadAllBytes(PathFor("Aldo.ttf")),File.ReadAllBytes(PathFor("SwealiumTestVariable.ttf"))];
+        for(int i=0;i<96;i++)
+        {
+            using(var pixels=new SKBitmap(140,45))
+            using(var surface=SKSurface.Create(pixels.Info,pixels.GetPixels(),pixels.RowBytes)!)
+            {
+                var font=Font.FromBytes(sources[i%2]);
+                if(i%4==3){var selected=font.WithVariations([new("wght",900)]);font.Dispose();font=selected;}
+                using var text=font.Shape("AV fi",22,new(){Language="en",Features=[FontFeature.Kerning(i%3!=0)]});
+                font.Dispose();surface.Canvas.Clear(SKColors.Transparent);var drawing=new SkiaDrawingContext(surface.Canvas);
+                try{drawing.AntiAliasing=i%2==0;drawing.DrawShapedText(text,new(3,30),Color.White);}finally{drawing.End();}
+                Check(text.Glyphs.Count>0&&text.Size.Width>0,"Repeated font-data ownership survives shaping and source disposal");
+            }
+            if(i%16==15){GC.Collect();GC.WaitForPendingFinalizers();GC.Collect();}
+        }
+    }
 }
