@@ -75,7 +75,8 @@ public sealed class Font : IDisposable
     {
         if(faceIndex<0)throw new ArgumentOutOfRangeException(nameof(faceIndex));
         if(bytes.Length==0||bytes.Length>64*1024*1024)throw new InvalidDataException("Font data must contain 1..64 MiB of encoded bytes.");
-        using var data=SKData.CreateCopy(bytes);return new(SKTypeface.FromData(data,faceIndex)??throw new InvalidDataException("Unsupported or invalid font data/collection index."));
+        var extracted=FontCollectionData.Extract(bytes,faceIndex);
+        using var data=SKData.CreateCopy(extracted is null?bytes:extracted);return new(SKTypeface.FromData(data,0)??throw new InvalidDataException("Unsupported or invalid font data/collection index."));
     }
     public static Font FromBase64(string base64,int faceIndex=0)
     {

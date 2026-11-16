@@ -21,6 +21,8 @@ internal static class FontTests
         using var encoded=Font.FromBase64(Convert.ToBase64String(File.ReadAllBytes(PathFor("Aldo.ttf"))));Check(encoded.FamilyName==aldo.FamilyName,"Base64 loading");
         using var system=Font.Match();Check(system.GlyphCount>0&&Font.GetSystemFamilies().Count>0,"System font matching and family inventory");
         using var firstFace=Font.Load(PathFor("SwealiumTestCollection.ttc"),0);using var secondFace=Font.Load(PathFor("SwealiumTestCollection.ttc"),1);Check(firstFace.Weight==400&&secondFace.Weight==900,"Collection indices select distinct static faces");
+        Throws<InvalidDataException>(()=>Font.Load(PathFor("SwealiumTestCollection.ttc"),2));
+        var invalidCollection=File.ReadAllBytes(PathFor("SwealiumTestCollection.ttc"));Array.Fill(invalidCollection,(byte)255,12,4);Throws<InvalidDataException>(()=>Font.FromBytes(invalidCollection));
         var systemOne=Font.Match();using var systemTwo=Font.Match();systemOne.Dispose();using var afterDispose=systemTwo.Shape("Font",16);Check(afterDispose.Size.Width>0,"Separately matched fonts have independent lifetimes");
         Throws<InvalidDataException>(()=>Font.FromBytes([1,2,3]));Throws<ArgumentOutOfRangeException>(()=>Font.FromBytes([1],-1));Throws<ArgumentOutOfRangeException>(()=>font.ContainsGlyph(0xd800));Throws<ArgumentOutOfRangeException>(()=>font.GetMetrics(0));
     }
