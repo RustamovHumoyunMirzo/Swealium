@@ -72,6 +72,7 @@ Namespace: `Swealium.UI.Effects`. All inherit IsEnabled and the lifecycle above.
 | `DropShadow` | `()`; `Radius`, `Offset`, `Color`, `ShadowOnly` | Sigma `(8,8)`, offset `(0,4)`, solid black alpha 110, false |
 | `ProgressiveBlur` | `(BlurGradient gradient, BlurTarget target = Layer)`; `Gradient`, `Target`, `EdgeMode` | Required gradient; Layer target; Clamp edges |
 | `ColorFilter` | `()` or `(ColorMatrix matrix)`; `Matrix` | Identity matrix |
+| [`Ripple`](#ripple) | `()`; `Trigger`, `Clear`, `Advance`, configurable color/timing/radius/clip and overlap limit | 500 ms, white alpha 80, auto radius, rounded clipping, up to 8 waves |
 
 **Gaussian blur:** Radius is Gaussian standard deviation (sigma) in logical pixels, not a hard cutoff or an opacity amount. Width/height independently control horizontal/vertical spread. `new LayerBlur(new Size(12,0))` smooths horizontally only; `(0,12)` vertically only; `(0,0)` leaves the image sharp. Transparent source alpha remains transparent and soft silhouettes spread according to their alpha. LayerBlur includes children, overlay, stroke and outline.
 
@@ -79,7 +80,56 @@ Namespace: `Swealium.UI.Effects`. All inherit IsEnabled and the lifecycle above.
 
 **DropShadow:** uses the completed subtree's alpha, not a rectangular layout box. Transparent holes and rounded corners stay shaped; children and decorative borders participate. ShadowOnly=true removes the original foreground and draws only its shadow. Color must be a solid Swealium Color; gradients are rejected. For a glow, use offset `(0,0)` with a colored shadow. To stack independent shadows of the original source, draw them in a custom effect; nested DropShadow entries also shadow earlier rendered shadows according to their nesting.
 
-All uniform radii and BlurStop.Radius values must be finite in `[0,512]`. Nonfinite offsets, invalid enums, negative radii, or out-of-range opacity throw ArgumentOutOfRangeException. Gradient/matrix properties reject null with ArgumentNullException. DropShadow rejects gradient colors with ArgumentException.
+All uniform blur radii and BlurStop.Radius values must be finite in `[0,512]`. Nonfinite offsets, invalid enums, negative radii, or out-of-range opacity throw ArgumentOutOfRangeException. Gradient/matrix properties reject null with ArgumentNullException. DropShadow rejects gradient colors with ArgumentException. Ripple's circle radius has its own contract below.
+
+## Ripple
+
+`Ripple : WidgetEffect, IDisposable` draws expanding, fading circles over a widget in PostDraw. It has an explicit trigger API: attaching an effect does not subscribe to input, consume events, capture pointers or change focus. A single instance can serve multiple widgets, with independent origins and timelines for overlapping triggers.
+
+```csharp
+using Swealium.Input;
+using Swealium.UI.Effects;
+
+var ripple = new Ripple();
+button.Effects.Add(ripple);
+button.PointerInput += e =>
+{
+    if (e.Kind == PointerEventKind.Down && e.Button == PointerButton.Primary)
+        ripple.Trigger(button, e.Position); // Widget-local point
+};
+button.KeyboardInput += e =>
+{
+    if (e.IsDown && !e.IsRepeat && e.Key is Key.Space or Key.Enter)
+        ripple.Trigger(button); // Centered activation
+};
+window.Closed += ripple.Dispose;
+```
+
+Trigger can also be called by application code, a command, or an accessibility action. Avoid combining pointer-down and Click triggers unless two waves are intended. For bubbling handlers, Position is local to the current recipient; pass the widget whose handler is running. The existing rounded hit test decides whether a pointer is eligible to trigger at all.
+
+| Member | Default / behavior |
+| --- | --- |
+| `Color` | White alpha 80; supports solid and gradient colors |
+| `Duration` | 500 ms; nonnegative TimeSpan; zero duration retires immediately |
+| `Radius` | NaN means distance from origin to the farthest current widget corner; otherwise finite nonnegative logical radius |
+| `FadeStart` | .35; normalized time in [0,1] at which linear fading begins; 1 holds until completion |
+| `Interpolation` | Easing.QuadraticOut; non-null expansion easing; finite overshoot is clamped to [0,1] |
+| `ClipToBounds` | true; clip waves to the widget's current rounded bounds independently of Widget.ClipToBounds |
+| `MaxRipples` | 8; integer 1..256, shared across this effect's targets; oldest wave is retired at capacity |
+| `ActiveCount` | Read-only count of active waves across targets |
+| `IsDisposed` | Read-only; disposed effects remain safe no-op decorations if left in Effects |
+| `Trigger(Widget widget, Point? origin = null, AnimationClock clock = Application)` | Return true when accepted; null origin uses widget center; attach and arrange the widget first |
+| `Advance(TimeSpan delta)` | Advance all manual-clock waves by nonnegative delta; automatic waves are unaffected |
+| `Clear(Widget? widget = null)` | Cancel all waves, or only waves for one widget |
+| `Dispose()` | Clear/unregister all waves; idempotent on the creating thread |
+
+New waves snapshot Color, Radius, FadeStart, Duration and Interpolation. Later edits affect future triggers; ClipToBounds and MaxRipples apply immediately. Auto-radius waves follow the widget's current size and Radii, while their triggering origin stays widget-local. Set an explicit Radius for a fixed-size wave. Fading multiplies Color alpha, preserving gradient-stop transparency; widget group opacity is then applied normally. PostDraw places the ripple over content and the widget stroke. Outer effects can additionally filter the completed ripple according to normal stack nesting.
+
+Trigger returns false for disabled effects, hidden widgets, or a zero-size area. An unattached effect throws InvalidOperationException; null targets, invalid clocks/origins/radii/timing and out-of-range settings are rejected. Automatic triggers require an active application session. Use `Trigger(widget, origin, AnimationClock.Manual)` with Advance for deterministic tests or external hosts. All operations and property mutations follow the creating-thread rule; no worker timer or native public type is involved. Animator interpolation faults propagate normally and retire the affected wave.
+
+Natural completion, application shutdown and disposal unregister automatic animations. A wave holds its widget weakly; a collected widget or an effect removed from its target is retired at the next update. Manual waves require manual advancement or Clear/Dispose to retire. Disabling an effect suppresses drawing and new triggers while existing clocks continue; re-enabling can reveal unfinished waves. Removing an effect does not dispose the shared instance; use Clear(target) for immediate cleanup or Dispose when all consumers are finished. Setting ClipToBounds=false allows waves beyond the owner's clip, while ancestor and scroll-viewport clipping still apply.
+
+Run `dotnet run --project samples/Swealium.Sample -c Release -- --ripple-demo` for pointer-position, centered keyboard and programmatic triggers, shared effects and overlapping waves.
 
 ## Progressive blur gradients
 

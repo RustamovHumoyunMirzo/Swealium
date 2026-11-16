@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Runtime.ExceptionServices;
 using System.Diagnostics;
 using Swealium.Native;
+using Swealium.Animation;
 namespace Swealium;
 
 /// <summary>Owns SDL and the event loop for all application windows. Invoke Run on the process main thread.</summary>
@@ -18,6 +19,13 @@ public static class SwealiumApplication
         set { VerifyAccess(); if (Volatile.Read(ref running) != 0) throw new InvalidOperationException("Set HardwareAcceleration before Run."); hardwareAcceleration = value; }
     }
     private static Session? current;
+    internal static void VerifyAnimationAccess()
+    {
+        VerifyAccess();
+        if(current is null||current.Stopping)throw new InvalidOperationException("Start automatic animations inside an active SwealiumApplication.Run session.");
+    }
+    internal static void RegisterAnimation(AnimationRegistration animation) { VerifyAnimationAccess();current!.Animations.Add(animation); }
+    internal static void UnregisterAnimation(AnimationRegistration animation)=>current?.Animations.Remove(animation);
     /// <summary>A snapshot of application-managed windows. Access on the UI thread.</summary>
     public static IReadOnlyList<SwealiumWindow> Windows
     {
@@ -86,6 +94,10 @@ public static class SwealiumApplication
                         target.HandleSdlEvent(e);
                 }
                 session.CloseRequested();
+                long animationTime=Stopwatch.GetTimestamp();
+                if(session.Windows.Count>0)
+                    foreach(var animation in session.Animations.ToArray())
+                        if(session.Animations.Contains(animation))animation.Tick(animationTime);
                 foreach (var window in session.Windows.Values.ToArray())
                     if (!window.IsDisposed && !window.IsCloseRequested) window.Render();
                 session.CloseRequested();
@@ -96,6 +108,12 @@ public static class SwealiumApplication
         finally
         {
             session.Stopping = true;
+            foreach(var animation in session.Animations.ToArray())
+            {
+                try{animation.Stop();}
+                catch(Exception error){failure??=error;}
+            }
+            session.Animations.Clear();
             foreach (var window in session.Windows.Values.ToArray())
             {
                 try { window.Dispose(); }
@@ -113,6 +131,7 @@ public static class SwealiumApplication
     {
         internal readonly int ThreadId = Environment.CurrentManagedThreadId;
         internal readonly Dictionary<uint, SwealiumWindow> Windows = [];
+        internal readonly HashSet<AnimationRegistration> Animations = [];
         private readonly ConcurrentQueue<(SendOrPostCallback Callback, object? State)> callbacks = new();
         internal bool Stopping;
         internal bool HasPendingCallbacks => !callbacks.IsEmpty;

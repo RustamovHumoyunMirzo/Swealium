@@ -29,6 +29,7 @@ dotnet pack src/Swealium -c Release -o artifacts
 - [Layout and rounded corners](docs/layout.md)
 - [Every widget, scrolling, and customizable scrollbars](docs/widgets/README.md)
 - [Widget effects: blur, glass, shadows, and custom hooks](docs/effects.md)
+- [AnimatorContext and UI-thread animations](docs/animation.md)
 - [Grid rows, columns, and spans](docs/grid.md)
 - [Shaped text, HTML markup, editing, and IME](docs/text.md)
 - [Bitmaps, image formats, SVG, and vector paths](docs/images-and-vectors.md)

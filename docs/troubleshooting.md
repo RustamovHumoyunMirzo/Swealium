@@ -40,6 +40,12 @@ A headless runner has no desktop video device. Set SDL_VIDEO_DRIVER=dummy and SD
 
 This is different from a missing native-library error: SDL loaded successfully but could not initialize an available video backend. Installing unrelated graphics libraries or skipping the window tests does not address driver selection.
 
+## Buttons lose pixels along the bottom of a container
+
+Check the parent's requested Height against each child's DesiredSize, including child margins and parent padding. Button height comes from the current font's line metrics plus vertical padding; a default button can measure slightly above 44 logical pixels. A horizontal container fixed at Height=44 still measures an auto-height child at its natural size, so the parent's default ClipToBounds=true cuts off the overflowing bottom edge and rounded corners. Fractional coordinates/DPI can make the cut look smaller than a pixel.
+
+Use `HeightSizing = SizingMode.Content` for a control row, optionally with MinHeight for a minimum target size. This keeps the row tall enough across fonts and platforms. For a deliberately fixed row, explicitly fit its children and ensure their text/padding also fit. Disabling clipping lets overflow paint but does not fix the row's layout or sibling spacing.
+
 ## Shapes render but text is blank
 
 The default system typeface may be unavailable. Install fonts and fontconfig on Linux. The package uses fontconfig-enabled Skia native assets and internal HarfBuzz shaping. TextStyle.FontFamily requests a family; system fallback still requires fonts containing the desired glyphs. See [text](text.md) for style and IME limitations.

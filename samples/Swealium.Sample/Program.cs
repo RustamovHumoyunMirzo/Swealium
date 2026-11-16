@@ -3,8 +3,67 @@ using Swealium.Graphics;
 using Swealium.Input;
 using Swealium.UI;
 using Swealium.UI.Effects;
+using Swealium.Animation;
 
 bool smokeTest = args.Contains("--smoke-test");
+if(args.Contains("--ripple-demo"))
+{
+    SwealiumApplication.Run(new(){Title="Swealium - triggered ripple effects",Width=850,Height=560},window=>
+    {
+        var root=new Container{Padding=new(28),Gap=20,Background=new(20,27,40)};
+        root.Children.Add(new Text{Content="Ripple: trigger from any input or application action",Style=new(){FontSize=26,Foreground=Color.White}});
+        root.Children.Add(new Text{Content="Press anywhere on a panel, or focus it and press Space / Enter. Rapid presses overlap.",Style=new(){Foreground=new(190,215,240)}});
+        var ripple=new Ripple{Color=new(255,255,255,110),Duration=TimeSpan.FromMilliseconds(650),MaxRipples=8};
+        var row=new Container{Layout=LayoutMode.Horizontal,Height=180,Gap=24};
+        var first=new Button{Text="Rounded panel",Weight=1,Radii=new(30),Background=new(40,115,190)};
+        var second=new Button{Text="Asymmetric corners",Weight=1,Radii=new(45,5,45,5),Background=new(130,65,170)};
+        foreach(var button in new[]{first,second})
+        {
+            button.Effects.Add(ripple);
+            button.PointerInput+=e=>{if(e.Kind==PointerEventKind.Down&&e.Button==PointerButton.Primary)ripple.Trigger(button,e.Position);};
+            button.KeyboardInput+=e=>{if(e.IsDown&&!e.IsRepeat&&e.Key is Key.Space or Key.Enter)ripple.Trigger(button);};
+            row.Children.Add(button);
+        }
+        root.Children.Add(row);
+        var controls=new Container{Layout=LayoutMode.Horizontal,HeightSizing=SizingMode.Content,Gap=12};
+        var trigger=new Button{Text="Trigger both centers",Weight=1};trigger.Click+=()=>{ripple.Trigger(first);ripple.Trigger(second);};
+        var clear=new Button{Text="Clear ripples",Weight=1};clear.Click+=()=>ripple.Clear();controls.Children.Add(trigger);controls.Children.Add(clear);root.Children.Add(controls);
+        root.Children.Add(new Text{Content="One effect shared by two widgets; each wave keeps its own target and origin.",Style=new(){Foreground=new(190,215,240)}});
+        window.Content=root;window.Closed+=ripple.Dispose;
+        if(smokeTest){int frames=0;window.Paint+=(_,_)=>{if(++frames==1){ripple.Trigger(first,new(25,30));ripple.Trigger(second);}if(frames==3)window.RequestClose();};}
+    });
+    return;
+}
+if(args.Contains("--animation-demo"))
+{
+    SwealiumApplication.Run(new(){Title="Swealium - AnimatorContext",Width=980,Height=620},window=>
+    {
+        var root=new Container{Padding=new(24),Gap=16,Background=new(20,27,40)};
+        root.Children.Add(new Text{Content="AnimatorContext: one UI clock, custom values and easing",Style=new(){FontSize=27,Foreground=Color.White}});
+        root.Children.Add(new Text{Content="The timeline updates transform, color, opacity and shadow without changing the widget's layout.",Style=new(){Foreground=new(185,210,235)}});
+        var stage=new Container{Layout=LayoutMode.Absolute,Height=260,Radii=new(18),Background=new(32,43,62)};
+        stage.Children.Add(new DrawingCanvas((c,b)=>{c.DrawLine(new(24,b.Height/2),new(b.Width-24,b.Height/2),new(90,115,145),2);}){WidthSizing=SizingMode.Fill,HeightSizing=SizingMode.Fill,ConsumePointer=false});
+        var mover=new Button{X=24,Y=90,Width=160,Height=70,Text="Animated",Radii=new(18)};var shadow=new DropShadow{Color=new(30,160,245,150)};mover.Effects.Add(shadow);stage.Children.Add(mover);root.Children.Add(stage);
+        var status=new Text{Style=new(){Foreground=new(185,210,235)}};
+        var animation=new AnimatorContext{Duration=TimeSpan.FromMilliseconds(1400),RepeatDelay=TimeSpan.FromMilliseconds(200),RepeatCount=-1,AutoReverse=true,Interpolation=Easing.CubicInOut};
+        void Status()=>status.Content=$"{animation.State} | value {animation.Value:F3} | iteration {animation.Iteration} | rate {animation.PlaybackRate}x";
+        animation.OnUpdate+=value=>
+        {
+            mover.Transform=Transform.Translate((Math.Max(0,stage.ActualWidth-208))*value,0);
+            mover.Opacity=.45f+.55f*value;shadow.Radius=new(3+9*value,3+9*value);
+            mover.Background=AnimationValues.Color(new(45,125,210),new(170,80,215),value);Status();
+        };
+        animation.OnCompleted+=Status;animation.OnPaused+=Status;animation.OnResumed+=Status;animation.OnCancelled+=_=>Status();
+        var controls=new WrapContainer{Gap=10,LineGap=10};
+        void Control(string label,Action action){var button=new Button{Text=label,Width=140,Height=42};button.Click+=action;controls.Children.Add(button);}
+        Control("Restart",()=>animation.Restart());Control("Pause / resume",()=>{if(animation.State==AnimationState.Paused)animation.Resume();else animation.Pause();});
+        Control("Seek 50%",()=>{if(animation.IsActive)animation.Seek(.5);});Control("Finish",()=>animation.Finish());Control("Cancel",()=>animation.Cancel());
+        Control("Rate 1x / 2x",()=>{animation.PlaybackRate=animation.PlaybackRate==1?2:1;Status();});
+        root.Children.Add(controls);root.Children.Add(status);window.Content=root;window.Closed+=animation.Dispose;animation.Start();
+        if(smokeTest){int frames=0;window.Paint+=(_,_)=>{if(++frames==3)window.RequestClose();};}
+    });
+    return;
+}
 if(args.Contains("--effects-demo"))
 {
     SwealiumApplication.Run(new(){Title="Swealium - widget effects",Width=1060,Height=800},window=>
@@ -33,7 +92,7 @@ if(args.Contains("--effects-demo"))
         var gray=Card(680,260,"Grayscale subtree");gray.Background=new(220,100,45);gray.Effects.Add(new ColorFilter(ColorMatrix.Grayscale()));
         root.Children.Add(stage);
         var status=new Text{Content="Glass background alpha: 45/255. Widget opacity: 1. Blur radius stays constant.",Style=new(){Foreground=new(190,215,240)}};
-        var controls=new Container{Layout=LayoutMode.Horizontal,Height=44,Gap=12};
+        var controls=new Container{Layout=LayoutMode.Horizontal,HeightSizing=SizingMode.Content,Gap=12};
         var alpha=new Button{Text="Toggle glass color alpha",Weight=1};alpha.Click+=()=>{glass.Background=glass.Background.A==255?new(255,255,255,45):Color.White;status.Content=$"Glass color alpha: {glass.Background.A}/255. Widget opacity: {glass.Opacity}.";};
         var opacity=new Button{Text="Toggle widget opacity",Weight=1};opacity.Click+=()=>{glass.Opacity=glass.Opacity==1?.5f:1;status.Content=$"Glass color alpha: {glass.Background.A}/255. Widget opacity: {glass.Opacity}.";};
         var enabled=new Button{Text="Enable / disable effects",Weight=1};bool effectsEnabled=true;enabled.Click+=()=>{effectsEnabled=!effectsEnabled;foreach(var card in new[]{glass,progressive,shadow,layer,fading,gray})foreach(var effect in card.Effects)effect.IsEnabled=effectsEnabled;};
@@ -72,7 +131,7 @@ if(args.Contains("--canvas-demo"))
         };
         canvas.PointerInput+=e=>{if(e.Kind==PointerEventKind.Move)pointer=e.Position;else if(e.Kind==PointerEventKind.Leave)pointer=null;};
         void Status()=>status.Content=$"{count:N0} samples | {(showScatter?"scatter (all points)":"ordered polyline")} | {canvas.Detail} | {(window.IsHardwareAccelerated?"GPU-backed Skia":"CPU raster")}";
-        var controls=new Container{Layout=LayoutMode.Horizontal,Height=44,Gap=10};
+        var controls=new Container{Layout=LayoutMode.Horizontal,HeightSizing=SizingMode.Content,Gap=10};
         var smaller=new Button{Text="100K samples",Weight=1};smaller.Click+=()=>{Generate(100_000);Status();};
         var larger=new Button{Text="1M samples",Weight=1};larger.Click+=()=>{Generate(1_000_000);Status();};
         var mode=new Button{Text="Plot / scatter",Weight=1};mode.Click+=()=>{showScatter=!showScatter;Status();};
@@ -126,7 +185,7 @@ if(args.Contains("--transform-demo"))
         var inner=Swealium.UI.List.Create(Enumerable.Range(1,20),i=>new Text{Content=$"Inner list item {i}",Height=28,Style=new(){Foreground=Color.White}});inner.Height=120;inner.Background=new(30,48,68);
         var outer=new ScrollContainer{Weight=1,WeightBasis=WeightBasis.Zero,Padding=new(8),Gap=14,Background=new(15,21,30)};
         outer.Children.Add(inner);outer.Children.Add(new Text{Content="Outer scroll content. Focus the outer region to transfer ownership.\nChain passes remaining input at an inner boundary.",Height=380,Style=new(){Foreground=new(185,210,235),FontSize=20}});
-        var controls=new Container{Layout=LayoutMode.Horizontal,Gap=8,Height=44};
+        var controls=new Container{Layout=LayoutMode.Horizontal,Gap=8,HeightSizing=SizingMode.Content};
         foreach(var mode in Enum.GetValues<OverscrollBehavior>())
         {
             var button=new Button{Text=mode.ToString(),Weight=1};button.Click+=()=>{inner.Overscroll=mode;window.Input.Focus(inner);status.Content=$"Inner overscroll: {mode}";};controls.Children.Add(button);
@@ -148,7 +207,7 @@ if(args.Contains("--list-demo"))
         var status=new Text{Content="Choose an item or focus a scrolling region.",Style=new(){Foreground=new(180,205,230)}};
         var list=Swealium.UI.List.Create(people,(person,index)=>
         {
-            var row=new Container{Layout=LayoutMode.Horizontal,Height=48,Padding=new(8),Gap=10,Background=index%2==0?new Color(38,48,65):new Color(30,39,55),Radii=new(6)};
+            var row=new Container{Layout=LayoutMode.Horizontal,MinHeight=48,HeightSizing=SizingMode.Content,Padding=new(8),Gap=10,Background=index%2==0?new Color(38,48,65):new Color(30,39,55),Radii=new(6)};
             row.Children.Add(new Text{Content=$"{index+1}. {person.Name} - score {person.Score}",Weight=1,WeightBasis=WeightBasis.Zero,Style=new(){Foreground=Color.White}});
             var action=new Button{Text="Open",Width=85};action.Click+=()=>status.Content=$"Opened {person.Name}, score {person.Score}";row.Children.Add(action);return row;
         });
@@ -156,7 +215,7 @@ if(args.Contains("--list-demo"))
         list.VerticalScrollBarStyle=new(){Thickness=12,TrackColor=new(25,35,50),ThumbColor=new(70,155,225),HoverThumbColor=new(110,190,250)};
         var outer=new ScrollContainer{Weight=1,WeightBasis=WeightBasis.Zero,Padding=new(10),Gap=14,Background=new(18,23,32)};
         outer.Children.Add(list);outer.Children.Add(new Text{Height=320,Content="Outer scrolling content.\n\nClick Focus outer to scroll this region.\n\nClick a list row or Focus list to scroll the list.\n\nThe focused list keeps wheel ownership at its boundaries.",Style=new(){Foreground=new(180,200,225),FontSize=20}});
-        var controls=new Container{Layout=LayoutMode.Horizontal,Gap=8,Height=44};
+        var controls=new Container{Layout=LayoutMode.Horizontal,Gap=8,HeightSizing=SizingMode.Content};
         var focusList=new Button{Text="Focus list",Weight=1};focusList.Click+=()=>window.Input.Focus(list);
         var focusOuter=new Button{Text="Focus outer",Weight=1};focusOuter.Click+=()=>window.Input.Focus(outer);
         var add=new Button{Text="Add row",Weight=1};add.Click+=()=>people.Add(new($"Added {people.Count+1}",100));

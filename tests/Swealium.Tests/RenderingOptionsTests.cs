@@ -100,6 +100,7 @@ internal static class RenderingOptionsTests
                     PointerOutlineTests.Gpu(surface);
                     DrawingCanvasTests.Gpu(surface);
                     EffectTests.Gpu(surface);
+                    RippleTests.Gpu(surface);
                     gpu.Present();
                 }
                 finally { Sdl.SDL_DestroyWindow(native); }

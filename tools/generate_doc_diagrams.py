@@ -337,6 +337,21 @@ body += text(40,620,"Progressive blur: sharp to soft, following spatial gradient
 body += text(40,657,"Widget.Opacity fades the completed result; it never changes blur radius.",19)
 figures["widget-effects.svg"] = frame("Widget effect stack and backdrop transparency", "Backdrop preparation runs before nested foreground filters. The first stack entry is the outer effect, applied to the inner effect's completed subtree including overlay, stroke and outline. Transparent background color reveals blurred scene content; opaque color covers it. Progressive blur varies Gaussian radius through spatial stops, independently of widget opacity.",body,height=690)
 
+body = text(40,100,"One UI clock: update values before the windows draw",22,weight="600")
+body += box(40,125,270,65,"Native events")+arrow(310,158,365,158)
+body += box(365,125,310,65,"AnimatorContext updates","#e6f5ef","#4a9784")+arrow(675,158,730,158)
+body += box(730,125,270,65,"Render windows")
+body += text(40,242,"Delay, forward leg, repeat delay, reversed leg",22,weight="600")
+body += box(40,280,140,65,"Delay", "#eef1f6", "#99a7b6")
+body += box(180,280,340,65,"Iteration 0: From to To")
+body += box(520,280,140,65,"Hold To", "#fff2d9", "#bd8a35")
+body += box(660,280,340,65,"Iteration 1: To to From")
+body += '<path d="M40 470 H180 C280 470 420 385 520 385 H660 C760 385 900 470 1000 470" fill="none" stroke="#4a9784" stroke-width="4"/>'
+body += text(40,503,"From",18)+text(530,378,"To",18)+text(1000,503,"From",18,anchor="end")
+body += text(40,550,"RepeatCount = 1, AutoReverse = true. Pause freezes time; Seek previews a leg.",19)
+body += text(40,590,"Manual clock: Start(Manual), then Advance(delta). No SDL or worker timer required.",18)
+figures["animation-timeline.svg"] = frame("Animator timeline and frame integration", "Automatic animations advance on the UI thread after native events and before window rendering. The timeline shows an initial delay, a forward iteration, a held endpoint during repeat delay, and an auto-reversed iteration ending at From. Manual clocks advance explicitly; pause does not consume time.",body,height=625)
+
 OUT.mkdir(parents=True, exist_ok=True)
 for name, value in figures.items():
     target = OUT / name

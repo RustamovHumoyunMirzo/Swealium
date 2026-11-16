@@ -35,6 +35,7 @@ foreach (Type type in types)
     string contract = type.Namespace switch
     {
         _ when typeof(Widget).IsAssignableFrom(type) => "../widgets/"+WidgetPage(type),
+        "Swealium.Animation" => "../animation.md",
         _ when type.Namespace == "Swealium.UI.Effects" || type.Name is "WidgetEffect" or "WidgetEffectCollection" or "BlurGradient" or "BlurStop" or "BlurEdgeMode" or "ColorMatrix" => "../effects.md",
         "Swealium.Graphics" when type.Name.StartsWith("Gradient",StringComparison.Ordinal) => "gradients.md",
         _ when type.Name is "SharedTextSelection" or "TextSelectionPart" => "text.md",

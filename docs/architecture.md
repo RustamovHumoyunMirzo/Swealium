@@ -26,7 +26,7 @@ The loop drains a bounded batch of queued UI callbacks, disposes requested closu
 4. Clear the surface to Background.
 5. Scale logical coordinates to physical pixels.
 6. Invoke window Paint/OnPaint behind the visual tree.
-7. Draw widgets in ascending sibling ZIndex with local transforms and rounded clipping. Scroll containers clip descendants to their viewport. A widget paints Draw, descendants, DrawOverlay, Stroke, then Outline. Its [effect stack](effects.md) prepares the backdrop and wraps this foreground sequence; widget opacity blends the completed group.
+7. Advance active automatic [animations](animation.md) on the UI thread, then draw widgets in ascending sibling ZIndex with local transforms and rounded clipping. Scroll containers clip descendants to their viewport. A widget paints Draw, descendants, DrawOverlay, Stroke, then Outline. Its [effect stack](effects.md) prepares the backdrop and wraps this foreground sequence; widget opacity blends the completed group.
 8. Submit GPU drawing and swap the window, or upload raster RGBA bytes to the SDL software texture and present.
 
 The application uses one approximately 16 ms frame clock. It is not a real-time scheduling guarantee. Hidden/minimized windows stay alive but skip Render. Layout is cached until invalidated; visible frames currently render continuously. A mutation made during a drawing callback may be arranged on the next layout pass; do not use Draw as the place to continually mutate geometry.

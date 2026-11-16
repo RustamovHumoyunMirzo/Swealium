@@ -22,6 +22,34 @@ internal static class LayoutTests
         throw new InvalidOperationException($"Expected {typeof(T).Name}");
     }
 
+    internal static void ContentControlRows()
+    {
+        foreach(float fontSize in new[]{14f,16f,24f})
+        {
+            var root=new Container{Padding=new(7.25f),Gap=3.125f,Background=Color.Black};
+            root.Children.Add(new Box{Height=10.375f});
+            var row=new Container{Layout=LayoutMode.Horizontal,HeightSizing=SizingMode.Content,MinHeight=44,Padding=new(2.5f,.75f),Gap=9.5f};
+            var first=new Button{Text="Trigger both centers",Weight=1,FontSize=fontSize,Background=new(255,0,0),Margin=new(.375f)};
+            var second=new Button{Text="Clear ripples",Weight=1,FontSize=fontSize,Background=new(255,0,0)};
+            row.Children.Add(first);row.Children.Add(second);root.Children.Add(row);LayoutEngine.Layout(root,new(500,220));
+            foreach(var button in row.Children)
+            {
+                Check(button.Bounds.Y+button.ActualHeight+button.Margin.Bottom<=row.ActualHeight-row.Padding.Bottom+.001f,"Content-sized rows include complete button height, padding and margins");
+                Near(button.ActualHeight,button.DesiredSize.Height-button.Margin.Vertical,"Cross-axis content height preserves font metrics");
+            }
+            foreach(float scale in new[]{1f,1.25f,1.5f,2f})
+            {
+                using var pixels=new SKBitmap((int)(500*scale),(int)(220*scale));using var surface=SKSurface.Create(pixels.Info,pixels.GetPixels(),pixels.RowBytes)!;surface.Canvas.Scale(scale,scale);WidgetRenderer.Render(surface.Canvas,root);
+                foreach(var button in row.Children)
+                {
+                    var bounds=button.ToWindow(new Rect(0,0,button.ActualWidth,button.ActualHeight));int x=(int)((bounds.X+bounds.Width/2)*scale),y=(int)MathF.Floor((bounds.Y+bounds.Height)*scale)-1;
+                    Check(pixels.GetPixel(x,y).Red>250,"The last fully covered button row is preserved at fractional positions and DPI scales");
+                }
+            }
+            first.FontSize=fontSize+5;LayoutEngine.Layout(root,new(500,220));Check(first.Bounds.Y+first.ActualHeight<=row.ActualHeight,"Text metric changes remeasure content-sized control rows");
+        }
+    }
+
     internal static void Spacing()
     {
         var root = new Container { Padding = new(10, 12, 14, 16), Gap = 7 };
