@@ -94,3 +94,7 @@ A focused widget must set AcceptsTextInput=true. Native text-service activation 
 PointerEvent adds optional int clickCount=0 and read-only ClickCount. Negative values throw ArgumentOutOfRangeException. SDL mouse button events supply their native click count; zero leaves repeated-click tracking to the attached TextEditor. Other hosts can provide counts explicitly.
 
 InputManager.TextSelection is a get-only SharedTextSelection owned by that manager. Selectable Text widgets share its cross-widget range and copy buffer; editable models remain separate. See [shared selection contracts](text.md#sharedtextselection-and-textselectionpart).
+
+PointerEvent.RemainingWheelDelta is a read-only normalized Point initialized from WheelDelta and reduced by scroll recipients. WheelDelta retains its original value. ScrollContainer Chain passes the remainder along the input route. See [overscroll contracts](../transforms-and-overscroll.md#overscroll-behavior).
+
+Widget.ConsumePointer aliases IsHitTestVisible and defaults true. Ghost subtrees are skipped by hit testing; existing captures cancel during validation and manual capture is rejected for ghosts or descendants of ghosts. Normal ancestor bubbling still uses Handled independently. See [pointer consumption](../pointers-and-outlines.md#consumepointer).

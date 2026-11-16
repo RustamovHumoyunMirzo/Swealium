@@ -25,7 +25,7 @@ public sealed class SharedTextSelection
         List<Text> result=[];
         void Visit(Widget widget)
         {
-            if(!widget.IsVisible||!widget.IsEnabled||!widget.IsHitTestVisible)return;
+            if(!widget.IsInteractable||!widget.IsHitTestVisible)return;
             if(widget is Text{Selectable:true,TextEditor:{IsEnabled:true}} text)result.Add(text);
             if(widget is Container container)foreach(var child in container.Children)Visit(child);
         }
@@ -118,12 +118,11 @@ public sealed class SharedTextSelection
     }
     private static Rect VisibleBounds(Text text)
     {
-        var origin=text.ToLocal(default);Rect bounds=new(-origin.X,-origin.Y,text.ActualWidth,text.ActualHeight);
+        Rect bounds=text.TransformedBounds;
         for(Widget? node=text;node is not null;node=node.Parent)
         {
-            var local=node.ToLocal(default);
-            if(node.ClipToBounds)bounds=Intersect(bounds,new(-local.X,-local.Y,node.ActualWidth,node.ActualHeight));
-            if(node is Container{ChildrenClip:{} clip})bounds=Intersect(bounds,new(clip.X-local.X,clip.Y-local.Y,clip.Width,clip.Height));
+            if(node.ClipToBounds)bounds=Intersect(bounds,node.TransformedBounds);
+            if(node is Container{ChildrenClip:{} clip})bounds=Intersect(bounds,node.ToWindow(clip));
         }
         return bounds;
     }

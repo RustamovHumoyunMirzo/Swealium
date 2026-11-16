@@ -116,3 +116,9 @@ Draw in local logical units, use ActualWidth/Height, and do not retain DrawingCo
 ## Attached text editing
 
 TextEditor is a get-only nullable controller attached by `new Swealium.Input.TextEditor(this)`. Default TextInputArea uses its scrolled caret area while enabled. Unhandled input routes through the controller after protected hooks and before public events; window candidate overlays and semantic editing actions recognize it. See [custom editing without TextBox inheritance](../text-selection.md#composition-instead-of-inheritance).
+
+See [widget transforms and overscroll policies](../transforms-and-overscroll.md) for coordinate mapping, render-only scale/rotation/translation, boundary feedback, and chaining.
+
+## Pointer consumption and outlines
+
+ConsumePointer defaults true and aliases IsHitTestVisible; false makes the whole subtree a pointer ghost while preserving drawing and independent keyboard/accessibility policies. Outline defaults off and adds a uniform Color/Width/Style/Offset decoration around Radii, outside the owner's clip but within ancestor clips. See [complete pointer/outline contracts](../pointers-and-outlines.md).

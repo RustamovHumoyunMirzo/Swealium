@@ -101,6 +101,7 @@ foreach (Type type in types)
         string modifiers = method.IsStatic ? "static " : method.IsAbstract ? "abstract " :
             method.GetBaseDefinition() != method ? "override " : method.IsVirtual && !method.IsFinal ? "virtual " : "";
         string name = method.Name switch { "op_Equality" => "operator ==", "op_Inequality" => "operator !=", _ => method.Name };
+        if(method.IsGenericMethodDefinition)name+="<"+string.Join(", ",method.GetGenericArguments().Select(argument=>argument.Name))+">";
         signatures.Add($"{Access(method)} {modifiers}{Name(method.ReturnType, nullable.Create(method.ReturnParameter))} {name}({string.Join(", ", method.GetParameters().Select(Parameter))});");
     }
     foreach (string signature in signatures) text.AppendLine("    " + signature);

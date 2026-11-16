@@ -82,3 +82,9 @@ The supplied implementation throws ObjectDisposedException when used after its c
 DrawingContext exposes virtual bool `AntiAliasing { get; set; }`. New contexts initialize it from SwealiumApplication.AntiAliasing. The Swealium implementation validates frame lifetime for both accessors. Overrides affect subsequent operations within that context only; image interpolation and previously recorded vector paints remain independent. See [rendering settings](../rendering.md).
 
 Color supports immutable gradient descriptions through implicit conversion. See [gradient contracts](gradients.md) for Color.Gradient/IsGradient, geometry, validation, and alpha behavior.
+
+See [widget transforms and overscroll policies](../transforms-and-overscroll.md) for coordinate mapping, render-only scale/rotation/translation, boundary feedback, and chaining.
+
+## Outline
+
+Readonly record struct Outline(float width, Color color, StrokeStyle style=Solid, float offset=0) has get-only Width, Color, Style, Offset. Width is finite nonnegative; Offset finite signed; Style a defined StrokeStyle. Default value is off (Width=0). Invalid arguments throw ArgumentOutOfRangeException. Color supports gradients. Geometry follows widget radii and reserves no space. See [outline contracts](../pointers-and-outlines.md#uniform-outline).

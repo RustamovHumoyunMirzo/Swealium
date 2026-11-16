@@ -73,7 +73,7 @@ public sealed class InputManager
     private static Widget? HitTest(Widget widget, Point parentPosition)
     {
         if (!widget.IsVisible || !widget.IsEnabled || !widget.IsHitTestVisible) return null;
-        Point local = new(parentPosition.X - widget.Bounds.X, parentPosition.Y - widget.Bounds.Y);
+        if(!widget.FromParent(parentPosition,out var local))return null;
         bool inside = widget.ContainsPoint(local);
         if (widget.ClipToBounds && !inside) return null;
         if (widget is Container container && container.CanHitChildren(local))
@@ -89,6 +89,12 @@ public sealed class InputManager
         if (widget is null || !widget.IsInteractable) return false;
         while (widget.Parent is not null) widget = widget.Parent;
         return ReferenceEquals(widget, root);
+    }
+    private bool IsPointerEligible(Widget widget)
+    {
+        if(!IsAttached(widget))return false;
+        for(Widget? node=widget;node is not null;node=node.Parent)if(!node.ConsumePointer)return false;
+        return true;
     }
     public bool Focus(Widget? widget)
     {
@@ -113,7 +119,7 @@ public sealed class InputManager
         if (FocusedWidget is not null && (!IsAttached(FocusedWidget) || !FocusedWidget.IsFocusable)) Focus(null);
         foreach(var pointer in pointers.Values.ToArray())
         {
-            if(pointer.Captured is not null&&!IsAttached(pointer.Captured))ChangeCapture(pointer,null,true);
+            if(pointer.Captured is not null&&!IsPointerEligible(pointer.Captured))ChangeCapture(pointer,null,true);
             UpdateHover(pointer,pointer.Present?HitTest(pointer.Position):null);
         }
     }
@@ -236,7 +242,7 @@ public sealed class InputManager
     {
         e.Source ??= widget;
         e.CurrentTarget = widget;
-        e.Position = widget.ToLocal(e.WindowPosition);
+        e.Position = widget.IsInteractable?widget.ToLocal(e.WindowPosition):default;
         widget.RaisePointer(e);
     }
     private void UpdateHover(Contact pointer,Widget? hit)
@@ -267,7 +273,7 @@ public sealed class InputManager
     public bool CapturePointer(PointerId id,Widget widget)
     {
         ArgumentNullException.ThrowIfNull(widget);
-        if(!IsAttached(widget)||CanProcessInput?.Invoke()==false||!pointers.TryGetValue(id,out var pointer))return false;
+        if(!IsPointerEligible(widget)||CanProcessInput?.Invoke()==false||!pointers.TryGetValue(id,out var pointer))return false;
         ChangeCapture(pointer,widget,true);return true;
     }
     public void ReleasePointerCapture(PointerId id){if(pointers.TryGetValue(id,out var pointer))ChangeCapture(pointer,null,true);}

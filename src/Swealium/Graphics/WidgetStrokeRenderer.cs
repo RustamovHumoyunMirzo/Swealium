@@ -7,14 +7,23 @@ internal static class WidgetStrokeRenderer
     private readonly record struct Sample(SKPoint Outer,SKPoint Inner,SKColor Color,StrokeStyle Style,float Width,Dictionary<Color,float>? Weights=null);
     internal static void Draw(SKCanvas canvas,Widget widget)
     {
-        Stroke stroke=widget.Stroke;float w=widget.ActualWidth,h=widget.ActualHeight;
+        Draw(canvas,widget.Stroke,new(0,0,widget.ActualWidth,widget.ActualHeight),widget.Radii);
+    }
+    internal static void Draw(SKCanvas canvas,Stroke stroke,Rect bounds,CornerRadii radii)
+    {
+        int saved=canvas.Save();
+        try{canvas.Translate(bounds.X,bounds.Y);DrawCore(canvas,stroke,bounds.Width,bounds.Height,radii);}
+        finally{canvas.RestoreToCount(saved);}
+    }
+    private static void DrawCore(SKCanvas canvas,Stroke stroke,float w,float h,CornerRadii radii)
+    {
         bool gradients=stroke.Left.Color.IsGradient||stroke.Top.Color.IsGradient||stroke.Right.Color.IsGradient||stroke.Bottom.Color.IsGradient;
         float l=Width(stroke.Left),t=Width(stroke.Top),r=Width(stroke.Right),b=Width(stroke.Bottom);
         if (w<=0||h<=0||(l==0&&t==0&&r==0&&b==0)) return;
         double horizontal=(double)l+r,vertical=(double)t+b;
         if (horizontal>w) {float scale=(float)(w/horizontal);l*=scale;r*=scale;}
         if (vertical>h) {float scale=(float)(h/vertical);t*=scale;b*=scale;}
-        var radius=widget.Radii.Normalize(new(w,h));
+        var radius=radii.Normalize(new(w,h));
         float iw=Math.Max(0,w-l-r),ih=Math.Max(0,h-t-b);
         SKPoint[] innerRadii=[new(Math.Max(0,radius.TopLeft-l),Math.Max(0,radius.TopLeft-t)),
             new(Math.Max(0,radius.TopRight-r),Math.Max(0,radius.TopRight-t)),

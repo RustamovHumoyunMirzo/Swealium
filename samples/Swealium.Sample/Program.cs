@@ -4,6 +4,90 @@ using Swealium.Input;
 using Swealium.UI;
 
 bool smokeTest = args.Contains("--smoke-test");
+if(args.Contains("--outline-demo"))
+{
+    SwealiumApplication.Run(new(){Title="Swealium - outlines and ghost pointers",Width=920,Height=760},window=>
+    {
+        var root=new Container{Padding=new(28),Gap=16,Background=new(24,30,42)};
+        root.Children.Add(new Text{Content="Outlines and pointer-transparent overlays",Style=new(){Foreground=Color.White,FontSize=27}});
+        var status=new Text{Content="Click the covered button. The ghost overlay passes pointer input through.",Style=new(){Foreground=new(185,210,235)}};
+        var stage=new Container{Layout=LayoutMode.Absolute,Height=155,ClipToBounds=false};int clicks=0;
+        var target=new Button{X=35,Y=35,Width=310,Height=70,Text="Click through the overlay"};target.Click+=()=>status.Content=$"Button clicked {++clicks} time(s)";
+        var overlay=new Container{X=25,Y=25,Width=330,Height=90,Padding=new(12),Background=new(30,110,180,90),Radii=new(14),ConsumePointer=false,ZIndex=10,Outline=new(3,new(80,230,160),offset:4)};
+        overlay.Children.Add(new Text{Content="Overlay",Style=new(){Foreground=Color.White}});stage.Children.Add(target);stage.Children.Add(overlay);root.Children.Add(stage);
+        var toggle=new Button{Text="Overlay consumes pointer: false",Height=44};toggle.Click+=()=>
+        {overlay.ConsumePointer=!overlay.ConsumePointer;toggle.Text=$"Overlay consumes pointer: {overlay.ConsumePointer}";overlay.Outline=new(3,overlay.ConsumePointer?new Color(245,130,90):new Color(80,230,160),offset:4);};root.Children.Add(toggle);
+        var gallery=new WrapContainer{Gap=12,LineGap=12};
+        foreach(var style in Enum.GetValues<StrokeStyle>())
+        {
+            var card=new Container{Width=140,Height=64,Padding=new(12),Margin=new(12),Radii=new(14),Background=new(45,60,85),Outline=new(4,Gradient.Horizontal(new(100,190,255),new(215,140,250)),style,offset:3)};
+            card.Children.Add(new Text{Content=style.ToString(),Style=new(){Foreground=Color.White,FontSize=19}});gallery.Children.Add(card);
+        }
+        root.Children.Add(gallery);root.Children.Add(status);window.Content=root;
+        if(smokeTest){int frames=0;window.Paint+=(_,_)=>{if(++frames==3)window.RequestClose();};}
+    });
+    return;
+}
+if(args.Contains("--transform-demo"))
+{
+    SwealiumApplication.Run(new(){Title="Swealium - transforms and overscroll",Width=900,Height=780},window=>
+    {
+        var root=new Container{Padding=new(20),Gap=14,Background=new(24,29,40)};
+        root.Children.Add(new Text{Content="Transforms follow drawing and input. Overscroll controls chaining.",Style=new(){FontSize=25,Foreground=Color.White}});
+        var status=new Text{Content="Click transformed controls; choose a scroll policy below.",Style=new(){Foreground=new(170,205,235)}};
+        var canvas=new Container{Layout=LayoutMode.Absolute,Height=230,Background=new(35,44,61),Radii=new(12)};
+        var transforms=new[]{Transform.Translate(25,10),Transform.ScaleBy(1.2f,.8f),Transform.Rotate(18),Transform.ScaleBy(-1,1)};
+        var labels=new[]{"Translated","Scaled","Rotated","Mirrored"};
+        for(int i=0;i<4;i++)
+        {
+            string label=labels[i];var button=new Button{Text=label,X=35+(i%3)*265,Y=i==3?150:45,Width=180,Height=55,Transform=transforms[i],Radii=new(12)};
+            button.Click+=()=>status.Content=$"Clicked {label}: inverse-transformed hit testing";canvas.Children.Add(button);
+        }
+        root.Children.Add(canvas);
+        var inner=Swealium.UI.List.Create(Enumerable.Range(1,20),i=>new Text{Content=$"Inner list item {i}",Height=28,Style=new(){Foreground=Color.White}});inner.Height=120;inner.Background=new(30,48,68);
+        var outer=new ScrollContainer{Weight=1,WeightBasis=WeightBasis.Zero,Padding=new(8),Gap=14,Background=new(15,21,30)};
+        outer.Children.Add(inner);outer.Children.Add(new Text{Content="Outer scroll content. Focus the outer region to transfer ownership.\nChain passes remaining input at an inner boundary.",Height=380,Style=new(){Foreground=new(185,210,235),FontSize=20}});
+        var controls=new Container{Layout=LayoutMode.Horizontal,Gap=8,Height=44};
+        foreach(var mode in Enum.GetValues<OverscrollBehavior>())
+        {
+            var button=new Button{Text=mode.ToString(),Weight=1};button.Click+=()=>{inner.Overscroll=mode;window.Input.Focus(inner);status.Content=$"Inner overscroll: {mode}";};controls.Children.Add(button);
+        }
+        var focusOuter=new Button{Text="Focus outer",Weight=1};focusOuter.Click+=()=>window.Input.Focus(outer);controls.Children.Add(focusOuter);
+        inner.BoundaryReached+=e=>status.Content=$"{inner.Overscroll}: unused wheel {e.UnconsumedDelta.Y:0.##}";
+        root.Children.Add(controls);root.Children.Add(outer);root.Children.Add(status);window.Content=root;
+        if(smokeTest){window.Input.Focus(inner);int frames=0;window.Paint+=(_,_)=>{if(++frames==3)window.RequestClose();};}
+    });
+    return;
+}
+if(args.Contains("--list-demo"))
+{
+    var people=new System.Collections.ObjectModel.ObservableCollection<SampleListPerson>(Enumerable.Range(1,40).Select(i=>new SampleListPerson($"Person {i}",60+i%40)));
+    SwealiumApplication.Run(new(){Title="Swealium - collection list",Width=880,Height=720},window=>
+    {
+        var root=new Container{Padding=new(22),Gap=14,Background=new(23,29,40)};
+        root.Children.Add(new Text{Content="Collection templates, owned scrolling, focus routing",Style=new(){FontSize=24,Foreground=Color.White}});
+        var status=new Text{Content="Choose an item or focus a scrolling region.",Style=new(){Foreground=new(180,205,230)}};
+        var list=Swealium.UI.List.Create(people,(person,index)=>
+        {
+            var row=new Container{Layout=LayoutMode.Horizontal,Height=48,Padding=new(8),Gap=10,Background=index%2==0?new Color(38,48,65):new Color(30,39,55),Radii=new(6)};
+            row.Children.Add(new Text{Content=$"{index+1}. {person.Name} - score {person.Score}",Weight=1,WeightBasis=WeightBasis.Zero,Style=new(){Foreground=Color.White}});
+            var action=new Button{Text="Open",Width=85};action.Click+=()=>status.Content=$"Opened {person.Name}, score {person.Score}";row.Children.Add(action);return row;
+        });
+        list.Height=260;list.Gap=4;list.Padding=new(6);list.Radii=new(10);list.Stroke=new(2,new(65,110,165));
+        list.VerticalScrollBarStyle=new(){Thickness=12,TrackColor=new(25,35,50),ThumbColor=new(70,155,225),HoverThumbColor=new(110,190,250)};
+        var outer=new ScrollContainer{Weight=1,WeightBasis=WeightBasis.Zero,Padding=new(10),Gap=14,Background=new(18,23,32)};
+        outer.Children.Add(list);outer.Children.Add(new Text{Height=320,Content="Outer scrolling content.\n\nClick Focus outer to scroll this region.\n\nClick a list row or Focus list to scroll the list.\n\nThe focused list keeps wheel ownership at its boundaries.",Style=new(){Foreground=new(180,200,225),FontSize=20}});
+        var controls=new Container{Layout=LayoutMode.Horizontal,Gap=8,Height=44};
+        var focusList=new Button{Text="Focus list",Weight=1};focusList.Click+=()=>window.Input.Focus(list);
+        var focusOuter=new Button{Text="Focus outer",Weight=1};focusOuter.Click+=()=>window.Input.Focus(outer);
+        var add=new Button{Text="Add row",Weight=1};add.Click+=()=>people.Add(new($"Added {people.Count+1}",100));
+        var bars=new Button{Text="Toggle list bar",Weight=1};bars.Click+=()=>list.VerticalScrollBarVisibility=list.VerticalScrollBarVisibility==ScrollBarVisibility.Hidden?ScrollBarVisibility.Auto:ScrollBarVisibility.Hidden;
+        controls.Children.Add(focusList);controls.Children.Add(focusOuter);controls.Children.Add(add);controls.Children.Add(bars);
+        root.Children.Add(controls);root.Children.Add(outer);root.Children.Add(status);window.Content=root;
+        if(smokeTest){people.Add(new("Observable update",100));window.Input.Focus(list);int frames=0;window.Paint+=(_,_)=>{if(++frames==3)window.RequestClose();};}
+    });
+    return;
+}
 if(args.Contains("--selection-demo"))
 {
     SwealiumApplication.Run(new(){Title="Swealium - text selection and composition",Width=850,Height=620},window=>
@@ -285,3 +369,5 @@ internal sealed class ComposedSampleEditor:Widget
         Editor.Draw(drawing);
     }
 }
+
+internal sealed record SampleListPerson(string Name,int Score);

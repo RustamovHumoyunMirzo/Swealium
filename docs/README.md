@@ -24,12 +24,15 @@ Documentation for **0.1.0-alpha.1 / .NET 10**. This describes the implemented AP
 | [Accessibility boundary](accessibility.md) | Semantic snapshots, actions, notifications, owned adapter lifecycle; native providers remain separate |
 | [Rendering settings](rendering.md) | Application/context anti-aliasing, GPU selection, diagnostics, software fallback |
 | [Gradients](gradients.md) | Seven geometries, stops, repeat/mirror/decal, existing Color properties |
+| [Transforms and overscroll](transforms-and-overscroll.md) | Translate/scale/rotate, inverse input mapping, scroll chaining and containment |
+| [Pointer consumption and outlines](pointers-and-outlines.md) | Ghost overlays, capture cleanup, uniform styled outlines, clipping and offset |
 | [Drawing](drawing.md) | Logical units, frame-scoped context, shapes, text, radii, DPI |
 | [Images and vectors](images-and-vectors.md) | Raster formats, Bitmap, offscreen drawing, SVG/SVGZ, paths, scaling, ownership |
 | [Cursors](cursors.md) | System types, inheritance/capture, window defaults, hidden and custom bitmap cursors |
 | [Selection and custom editors](text-selection.md) | Repeated clicks, selectable read-only text, placeholder color, composition without TextBox inheritance |
 | [Text and editing](text.md) | Shaping, bidi, HTML text markup, Text/TextBox, selection, clipboard, IME preedit/candidates |
 | [Widget hub](widgets/README.md) | Every public widget, inherited contracts, examples, strokes, and scrollbars |
+| [Data lists](widgets/list.md) | Typed collection templates, observable updates, owned scrolling and nested focus |
 | [Scrolling](widgets/scroll-container.md) | Directions, viewport/extent, nested input, custom or hidden scrollbars |
 | [Custom widgets](custom-widgets.md) | Intrinsic measurement, drawing, event overrides, custom containers |
 | [Native interop](native-interop.md) | Portable routing IDs versus borrowed OS handles, window-system kinds, ownership |

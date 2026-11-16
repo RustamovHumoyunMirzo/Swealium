@@ -428,8 +428,7 @@ public sealed class TextEditor
     {
         if (Candidates.Count == 0 || !IsFocused) return;
         Rect caretRect = TextInputArea;
-        for (Widget? node = owner; node is not null; node = node.Parent)
-            caretRect = caretRect with { X = caretRect.X + node.Bounds.X, Y = caretRect.Y + node.Bounds.Y };
+        caretRect=owner.ToWindow(caretRect);
         int first = Math.Max(0, SelectedCandidate), count = Math.Min(9, Candidates.Count - first);
         var labels = Enumerable.Range(first, count).Select(i => new TextLayout($"{i+1}. {Candidates[i]}", Style)).ToArray();
         try

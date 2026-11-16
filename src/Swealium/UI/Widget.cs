@@ -1,4 +1,5 @@
 using Swealium.Graphics;
+using System.Numerics;
 using Swealium.Input;
 using Swealium.Accessibility;
 namespace Swealium.UI;
@@ -17,6 +18,22 @@ public abstract class Widget
     private Stroke? localStroke;
     private Cursor? cursor;
     private float opacity=1;
+    private Transform transform;
+    public Transform Transform {get=>transform;set{value.Validate();transform=value;}}
+    public Rect TransformedBounds=>Graphics.Transform.Map(new(0,0,ActualWidth,ActualHeight),WorldTransform);
+    internal Matrix3x2 LocalTransform=>transform.Matrix(new(ActualWidth,ActualHeight),new(Bounds.X,Bounds.Y));
+    internal Matrix3x2 WorldTransform
+    {get{var result=Matrix3x2.Identity;for(Widget? node=this;node is not null;node=node.Parent)result*=node.LocalTransform;Graphics.Transform.Check(result);return result;}}
+    public Point ToWindow(Point point)
+    {var result=Vector2.Transform(new(point.X,point.Y),WorldTransform);return new(result.X,result.Y);}
+    public Rect ToWindow(Rect bounds)=>Graphics.Transform.Map(bounds,WorldTransform);
+    internal bool FromParent(Point point,out Point local)=>Invert(point,LocalTransform,out local);
+    private static bool Invert(Point point,Matrix3x2 matrix,out Point local)
+    {
+        if(Matrix3x2.Invert(matrix,out var inverse))
+        {var result=Vector2.Transform(new(point.X,point.Y),inverse);local=new(result.X,result.Y);return float.IsFinite(local.X)&&float.IsFinite(local.Y);}
+        local=default;return false;
+    }
     private Alignment? horizontalAlignment, verticalAlignment;
     private bool isVisible = true, layoutDirty = true, arranged;
     private Rect layoutBounds;
@@ -73,6 +90,7 @@ public abstract class Widget
     public Cursor? Cursor {get=>cursor;set{value?.Verify();cursor=value;}}
     /// <summary>Effective stroke. Explicit assignment suppresses automatic default/focus styling until ResetStroke.</summary>
     public Stroke Stroke { get=>localStroke??(IsFocused?FocusStroke:GetDefaultStroke());set=>localStroke=value; }
+    public Outline Outline {get;set;}
     public Stroke FocusStroke { get; set; }
     public bool IsStrokeSet => localStroke.HasValue;
     public void ResetStroke() => localStroke=null;
@@ -80,6 +98,8 @@ public abstract class Widget
     public bool ClipToBounds { get; set; } = true;
     public bool IsEnabled { get; set; } = true;
     public bool IsVisible { get => isVisible; set { isVisible = value; InvalidateLayout(); } }
+    /// <summary>False makes this visual subtree transparent to pointer targeting. Ancestor bubbling is unchanged.</summary>
+    public bool ConsumePointer {get=>IsHitTestVisible;set=>IsHitTestVisible=value;}
     public bool IsHitTestVisible { get; set; } = true;
     public bool IsFocusable { get; set; }
     /// <summary>Opt in to Unicode text events and the platform text input service when focused.</summary>
@@ -201,12 +221,10 @@ public abstract class Widget
     internal void RaiseComposition(TextCompositionEvent e) { OnCompositionInput(e); if(!e.Handled)TextEditor?.ProcessComposition(e); CompositionInput?.Invoke(e); }
     internal void RaiseCandidates(TextCandidatesEvent e) { OnCandidatesInput(e); if(!e.Handled)TextEditor?.ProcessCandidates(e); CandidatesInput?.Invoke(e); }
     internal void RaiseFocus() { OnFocusChanged(); TextEditor?.FocusChanged(); FocusChanged?.Invoke(); }
-    internal bool IsInteractable => IsVisible && IsEnabled && (Parent?.IsInteractable ?? true);
-    internal Point ToLocal(Point point)
+    internal bool IsInteractable => IsVisible && IsEnabled && Transform.Scale.Width!=0 && Transform.Scale.Height!=0 && (Parent?.IsInteractable ?? true);
+    public Point ToLocal(Point point)
     {
-        for (Widget? node = this; node is not null; node = node.Parent)
-            point = new(point.X - node.Bounds.X, point.Y - node.Bounds.Y);
-        return point;
+        if(!Invert(point,WorldTransform,out var local))throw new InvalidOperationException("The widget transform is not invertible.");
+        return local;
     }
 }
-

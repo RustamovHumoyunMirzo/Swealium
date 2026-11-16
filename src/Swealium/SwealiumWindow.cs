@@ -297,7 +297,7 @@ public partial class SwealiumWindow : IDisposable
         if (requested && Input.FocusedWidget is { } focused)
         {
             Rect area = focused.TextInputArea;
-            for (Widget? node = focused; node is not null; node = node.Parent) area = area with { X = area.X + node.Bounds.X, Y = area.Y + node.Bounds.Y };
+            area=focused.ToWindow(area);
             var rect = new Sdl.InputRect { X = (int)MathF.Floor(area.X), Y = (int)MathF.Floor(area.Y), Width = Math.Max(1, (int)MathF.Ceiling(area.Width)), Height = Math.Max(1, (int)MathF.Ceiling(area.Height)) };
             Sdl.Check(Sdl.SDL_SetTextInputArea(window, in rect, 0));
         }

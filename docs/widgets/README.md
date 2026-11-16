@@ -10,6 +10,7 @@ Every exported widget is documented here, including the abstract base. Each page
 | [Container](container.md) | Widget | Owned children; vertical/horizontal stack, overlay, absolute placement |
 | [Grid](grid.md) | Container | Fixed/content/fraction tracks, explicit cells and spanning |
 | [WrapContainer](wrap-container.md) | Container | Horizontal rows or vertical columns with finite boundary wrapping |
+| [List](list.md) | ScrollContainer | Collection-driven item templates with their own scrollbars and nested focus ownership |
 | [ScrollContainer](scroll-container.md) | Container | Clipped scrolling, directional policy, styled or custom scrollbars |
 | [Button](button.md) | Widget | Pointer/keyboard activation and shaped caption |
 | [Text](text.md) | Widget | Shaped paragraphs, bidi, wrapping, styled HTML text |

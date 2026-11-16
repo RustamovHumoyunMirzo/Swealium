@@ -171,3 +171,13 @@ Grid, GridLength, GridUnit, GridTrack, and GridTrackCollection are documented in
 `Accessibility` exposes mutable semantic metadata. Override protected `OnAccessibilityAction(AccessibilityActionRequest)` for custom actions. See [accessibility contracts](accessibility.md).
 
 Widget.TextEditor is a get-only nullable attachment, set by the TextEditor constructor. Default TextInputArea uses that controller when enabled. Dispatch invokes protected hooks, unhandled controller input, then public events. See [TextEditor contracts](text.md#texteditor-composition-controller).
+
+## Widget render transforms
+
+Widget.Transform is a Swealium.Graphics.Transform value, default Identity. Its setter validates finite components and does not invalidate layout. Scale/rotation/translation affect the whole painted subtree, overlays, strokes, clips, and inverse pointer coordinates. TransformedBounds is the window-space axis-aligned enclosure. ToWindow(Point) maps local coordinates, ToWindow(Rect) maps four rectangle corners, and ToLocal(Point) inversely maps window coordinates (InvalidOperationException if noninvertible). Singular scale suppresses rendering/input. See [transform contracts](../transforms-and-overscroll.md#translate-scale-and-rotate).
+
+## Scroll overscroll policy
+
+ScrollContainer.Overscroll is OverscrollBehavior, default Auto, validating enum assignments. Values: Auto, Chain, Contain, None. All subclasses, including List, inherit it. Chain passes normalized unused wheel delta onward even after partial movement; Contain blocks chaining but raises boundary feedback; None blocks chaining and suppresses feedback without disabling ordinary scrolling. Auto preserves existing focus/pointer routing. BoundaryReached is Action&lt;ScrollBoundaryEvent&gt;; the immutable record exposes UnconsumedDelta and Offset. Programmatic/keyboard/bar scrolling remains bounded. See [overscroll details](../transforms-and-overscroll.md#overscroll-behavior).
+
+Widget.ConsumePointer (bool get/set, true) aliases IsHitTestVisible. Widget.Outline (Swealium.Graphics.Outline get/set, default off) renders an automatic uniform external decoration. Neither changes layout. See [pointer and outline contracts](../pointers-and-outlines.md).

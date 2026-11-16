@@ -6,6 +6,9 @@ namespace Swealium.UI;
 public class ScrollContainer : Container
 {
     private ScrollDirection direction=ScrollDirection.Vertical;
+    private OverscrollBehavior overscroll;
+    public OverscrollBehavior Overscroll {get=>overscroll;set{if(!Enum.IsDefined(value))throw new ArgumentOutOfRangeException(nameof(value));overscroll=value;}}
+    public event Action<ScrollBoundaryEvent>? BoundaryReached;
     private ScrollBarVisibility horizontalVisibility,verticalVisibility;
     private ScrollBarStyle horizontalStyle=new(),verticalStyle=new();
     private bool overlay,arranging;
@@ -21,6 +24,8 @@ public class ScrollContainer : Container
     private Size reportedExtent;
     private Rect reportedViewport;
     public ScrollContainer() { IsFocusable=true; }
+    /// <summary>When nested and overflowing, require focus inside this container to own wheel scrolling.</summary>
+    public bool RequireFocusForNestedScrolling {get;set;}
     public ScrollDirection Direction
     {
         get=>direction;
@@ -150,12 +155,12 @@ public class ScrollContainer : Container
     {
         ArgumentNullException.ThrowIfNull(descendant);EnsureMetrics();
         if (ReferenceEquals(descendant,this)) return;
-        Rect bounds=new(0,0,descendant.ActualWidth,descendant.ActualHeight);
         Widget? node=descendant;
-        for (;node is not null&&!ReferenceEquals(node,this);node=node.Parent)
-            bounds=bounds with {X=bounds.X+node.Bounds.X,Y=bounds.Y+node.Bounds.Y};
-        if (node is null) throw new ArgumentException("The widget must be a descendant of this scroll container.",nameof(descendant));
-        BringIntoView(bounds with {X=bounds.X-viewport.X+offset.X,Y=bounds.Y-viewport.Y+offset.Y});
+        for(;node is not null&&!ReferenceEquals(node,this);node=node.Parent){}
+        if(node is null)throw new ArgumentException("The widget must be a descendant of this scroll container.",nameof(descendant));
+        if(!System.Numerics.Matrix3x2.Invert(WorldTransform,out var inverse))return;
+        Rect bounds=Graphics.Transform.Map(new(0,0,descendant.ActualWidth,descendant.ActualHeight),descendant.WorldTransform*inverse);
+        BringIntoView(bounds with{X=bounds.X-viewport.X+offset.X,Y=bounds.Y-viewport.Y+offset.Y});
     }
     private ScrollBarInfo Bar(ScrollAxis axis)
     {
@@ -227,11 +232,53 @@ public class ScrollContainer : Container
         }
         if (e.Kind==PointerEventKind.Wheel)
         {
-            float x=-e.WheelDelta.X*WheelStep,y=-e.WheelDelta.Y*WheelStep;
-            if (e.Modifiers.HasFlag(KeyModifiers.Shift)) {if (x==0) x=y;y=0;}
-            else if (Direction==ScrollDirection.Horizontal && x==0) {x=y;y=0;}
-            Point old=offset;ScrollBy(x,y);if (old!=offset) e.Handled=true;
+            if(e.ScrollRecipients.Contains(this))return;
+            var focused=FocusedWheelOwner();
+            if(focused is not null&&ContainsDescendant(focused)&&!e.ScrollRecipients.Contains(focused))
+            {
+                focused.ApplyWheel(e,true);
+                if(e.Handled||ReferenceEquals(focused,this))return;
+            }
+            bool gated=FocusGated;
+            if(gated&&!ContainsFocus())return;
+            ApplyWheel(e,gated);
         }
+    }
+    private bool FocusGated=>RequireFocusForNestedScrolling&&(MaximumOffset.X>0||MaximumOffset.Y>0)&&Ancestors().Any(widget=>widget is ScrollContainer);
+    private IEnumerable<Widget> Ancestors(){for(Widget? node=Parent;node is not null;node=node.Parent)yield return node;}
+    private InputManager? TreeInput
+    {get{Widget node=this;while(node.Parent is not null)node=node.Parent;return node.RootOwner;}}
+    private bool ContainsDescendant(Widget widget)
+    {for(Widget? node=widget;node is not null;node=node.Parent)if(ReferenceEquals(node,this))return true;return false;}
+    private bool ContainsFocus()=>TreeInput?.FocusedWidget is {} focus&&ContainsDescendant(focus);
+    private ScrollContainer? FocusedWheelOwner()
+    {
+        for(Widget? node=TreeInput?.FocusedWidget;node is not null;node=node.Parent)
+            if(node is ScrollContainer scroll&&scroll.FocusGated)return scroll;
+        return null;
+    }
+    private void ApplyWheel(PointerEvent e,bool own)
+    {
+        if(!e.ScrollRecipients.Add(this))return;
+        Point incoming=e.RemainingWheelDelta;
+        float x=-incoming.X*WheelStep,y=-incoming.Y*WheelStep;
+        bool rerouted=false;
+        if(e.Modifiers.HasFlag(KeyModifiers.Shift)){if(x==0){x=y;rerouted=true;}y=0;}
+        else if(Direction==ScrollDirection.Horizontal&&x==0){x=y;y=0;rerouted=true;}
+        Point old=offset;ScrollBy(x,y);
+        float dx=offset.X-old.X,dy=offset.Y-old.Y;
+        Point remaining=WheelStep==0?incoming:rerouted?new(incoming.X,incoming.Y+dx/WheelStep):new(incoming.X+dx/WheelStep,incoming.Y+dy/WheelStep);
+        if(Math.Abs(remaining.X)<.00001f)remaining=remaining with{X=0};
+        if(Math.Abs(remaining.Y)<.00001f)remaining=remaining with{Y=0};
+        e.RemainingWheelDelta=remaining;
+        bool boundary=remaining!=default;
+        if(boundary&&Overscroll!=OverscrollBehavior.None)BoundaryReached?.Invoke(new(remaining,offset));
+        e.Handled=Overscroll switch
+        {
+            OverscrollBehavior.Chain=>!boundary,
+            OverscrollBehavior.Contain or OverscrollBehavior.None=>true,
+            _=>own||old!=offset
+        };
     }
     protected override void OnKeyboardInput(KeyEvent e)
     {

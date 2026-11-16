@@ -87,6 +87,16 @@ Run("selectable read-only HTML text, copy boundaries, alignment, and toggling",S
 Run("custom widget text editing, IME, accessibility, and placeholder color",Swealium.Tests.TextSelectionTests.CustomEditingAndPlaceholder);
 Run("shared text selection across widgets, drag directions, ownership, and lifecycle",Swealium.Tests.SharedSelectionTests.DragAndOwnership);
 Run("shared text keyboard navigation, select-all, and native clipboard",Swealium.Tests.SharedSelectionTests.KeyboardAndCopy);
+Run("list typed sources, templates, refresh snapshots and failure ownership",Swealium.Tests.ListTests.Sources);
+Run("observable list updates, weak listeners and thread ownership",Swealium.Tests.ListTests.ObservableSources);
+Run("list layout, row reveal, directions and customizable scrollbar",Swealium.Tests.ListTests.LayoutAndCustomization);
+Run("nested list focus selects scrolling owner without boundary leakage",Swealium.Tests.ListTests.NestedFocus);
+Run("widget transforms: coordinates, raster pixels, hit routing, and zero scale",Swealium.Tests.TransformOverscrollTests.CoordinatesAndPixels);
+Run("transformed clipping, accessibility bounds/hits, and IME anchors",Swealium.Tests.TransformOverscrollTests.ClippingAndServices);
+Run("overscroll auto/chain/contain/none, residual input and inherited policy",Swealium.Tests.TransformOverscrollTests.OverscrollModes);
+Run("ConsumePointer ghost targeting, bubbling, subtree policy and capture cleanup",Swealium.Tests.PointerOutlineTests.GhostPointers);
+Run("outline styles, gap, radii, opacity, gradients and hit/layout independence",Swealium.Tests.PointerOutlineTests.PixelsAndStyles);
+Run("outline ancestor clipping and transformed painting",Swealium.Tests.PointerOutlineTests.ParentClipAndTransforms);
 Console.WriteLine($"{result.Passed} passed; {result.Failed} failed.");
 return result.Failed == 0 ? 0 : 1;
 

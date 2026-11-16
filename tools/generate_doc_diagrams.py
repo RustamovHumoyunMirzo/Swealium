@@ -253,6 +253,54 @@ body += text(40,660,"Reuse stops. Change the geometry. Assign directly to Color 
 body += text(40,698,"Pad extends endpoints; Repeat restarts; Reflect reverses; Decal becomes transparent.",18)
 figures["gradient-kinds.svg"] = frame("Seven gradient geometries", "Illustrative swatches show linear, circular radial, elliptical radial, angular sweep, offset two-circle conical, diamond Manhattan-distance, and square maximum-distance gradients. Every kind supports explicit stops and spread modes.",body,height=735)
 
+body = box(40,100,280,70,"C# collection / source")+arrow(320,135,380,135)
+body += box(380,100,280,70,"Item + index → factory")+arrow(660,135,720,135)
+body += box(720,100,280,70,"Distinct widget per row")
+body += box(40,225,580,300,"","#eaf2ff","#6286ba")+text(62,260,"List: its own clipped viewport",22,weight="600")
+for i in range(3):body += box(64,280+i*65,500,53,f"Row {i+1}: data + template arguments","#e6f5ef","#4a9784")
+body += '<rect x="582" y="280" width="14" height="185" rx="7" fill="#d6e1ed"/><rect x="582" y="300" width="14" height="55" rx="7" fill="#6286ba"/>'
+body += text(64,500,"Style, hide, overlay, or replace the scrollbar.",18)
+body += text(665,255,"Nested scrolling follows focus",22,weight="600")
+body += box(665,285,335,70,"Focus a row / list → scroll list")
+body += box(665,380,335,70,"Focus outer → scroll outer")
+body += text(665,498,"At an inner boundary, focus stays put.",17)
+body += text(40,585,"Observable collections refresh automatically; ordinary lists use Refresh().",20)
+body += text(40,625,"Rows are retained. Give the list a finite viewport to create overflow.",18)
+figures["list-data-flow.svg"] = frame("Collection-driven list and nested focus", "A C# collection passes each item and index through a widget factory. Generated rows share a clipped List viewport and customizable scrollbar. Nested wheel ownership follows focus and stays with the focused list at its boundary.",body,height=660)
+
+body = text(40,105,"Layout stays fixed",23,weight="600")
+body += '<rect x="60" y="150" width="260" height="120" rx="16" fill="none" stroke="#8d9db0" stroke-width="3" stroke-dasharray="8 6"/>'
+body += '<g transform="translate(65 20) translate(190 210) rotate(16) scale(1.1 .85) translate(-190 -210)"><rect x="60" y="150" width="260" height="120" rx="16" fill="#dceaff" stroke="#6286ba" stroke-width="4"/><circle cx="100" cy="185" r="7" fill="#c66363"/></g>'
+body += text(40,350,"Scale → rotate → translate",22)
+body += text(40,390,"Drawing and input share the same mapping.",19)
+body += text(40,430,"The dashed layout slot does not move.",19)
+body += text(560,105,"Wheel chaining is a behavior policy",23,weight="600")
+body += box(560,145,420,65,"Chain: consume available input")+arrow(770,210,770,255)
+body += box(560,255,420,65,"Pass only the remainder to the parent","#e6f5ef","#4a9784")
+body += box(560,365,420,65,"Contain / None: stop at this container","#fff1d6","#b48a35")
+body += text(560,475,"Contain reports the boundary; None is silent.",18)
+body += text(40,555,"Auto preserves existing routing, including focus ownership for nested lists.",21)
+body += text(40,598,"Offsets remain bounded. No elastic displacement or bounce is added.",19)
+figures["widget-transform-overscroll.svg"] = frame("Render transforms and bounded scroll chaining", "A transformed rounded widget is translated, scaled and rotated relative to an unchanged dashed layout slot. Inverse coordinate mapping keeps input aligned. Chain forwards unused wheel input, while Contain and None stop chaining. None suppresses boundary feedback.",body,height=635)
+
+body = text(40,105,"One width, following the rounded boundary",22,weight="600")
+body += '<rect x="44" y="144" width="362" height="212" rx="40" fill="none" stroke="#9167d8" stroke-width="8"/>'
+body += '<rect x="60" y="160" width="330" height="180" rx="24" fill="#dceaff" stroke="#6286ba" stroke-width="2"/>'
+body += text(225,242,"Widget bounds",23,anchor="middle",weight="600")
+body += '<path d="M225 148 V160 M217 148 H233 M217 160 H233" stroke="#b48a35" stroke-width="2"/>'
+body += text(245,135,"Offset: gap",18)
+body += text(55,405,"Outline stays outside the owner clip.",19)
+body += text(55,445,"Margin/layout/hit regions stay unchanged.",18)
+body += text(570,105,"ConsumePointer controls targeting",22,weight="600")
+body += box(605,220,340,76,"Lower target widget")
+body += '<rect x="580" y="175" width="390" height="165" rx="18" fill="#e6f5ef" fill-opacity=".35" stroke="#4a9784" stroke-width="3" stroke-dasharray="9 6"/>'
+body += text(600,205,"Ghost overlay",19,weight="600")+arrow(900,120,900,255,"#4a9784")
+body += text(580,405,"false: target the widget underneath",19)
+body += text(580,445,"true: target the top widget",19)
+body += text(40,530,"Ancestor clips still apply. Outline supports Solid, Dashed, Dotted, Double, Hidden.",19)
+body += text(40,575,"Ghost policy affects pointer targets; ancestor bubbling still uses Handled.",19)
+figures["pointer-outline.svg"] = frame("Uniform outline and pointer-transparent overlays", "A single-width rounded outline sits beyond the widget with a visible offset gap. A transparent ghost overlay lets a pointer target the lower widget. ConsumePointer true targets the top visual; false skips its entire pointer subtree. Ancestor clips and event Handled remain independent.",body,height=610)
+
 OUT.mkdir(parents=True, exist_ok=True)
 for name, value in figures.items():
     target = OUT / name

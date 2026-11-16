@@ -126,3 +126,9 @@ Wheel uses both delta axes. Holding Shift maps a vertical wheel to horizontal mo
 Primary thumb down captures through InputManager, dragging clamps even outside the viewport, and Up/Cancel ends dragging. Track clicks move one viewport toward the pointer. Bars take hit priority over scrolled children, including overlay bars. They have no separate focusable Widget objects. When the scroller itself is focused, arrows move by WheelStep, PageUp/Down by a viewport, and Home/End move to range endpoints. Key events already consumed by a focused editor/button are not repurposed for scrolling.
 
 This is retained scrolling, not virtualization: all children still measure/draw under clipping. Scrollbar drags have independent pointer ownership, including simultaneous drags on different axes. There is no pinch recognizer, kinetic scrolling, auto-repeat track paging, or scroll animation. Semantic scroll actions are exposed through the [accessibility boundary](../accessibility.md). Run `dotnet run --project samples/Swealium.Sample -- --scroll-demo` for a working example.
+
+## Focus-owned nested scrolling
+
+RequireFocusForNestedScrolling defaults false and preserves pointer-based boundary bubbling. Set it true to let an overflowing nested scroll container own wheel input while it or a descendant is focused. The focused inner container keeps ownership at its edges; ancestors forward wheel input to it rather than scrolling themselves. Focus an outer container/control to transfer ownership back. This does not change programmatic offsets or scrollbar dragging. [List](list.md) enables the policy by default.
+
+See [widget transforms and overscroll policies](../transforms-and-overscroll.md) for coordinate mapping, render-only scale/rotation/translation, boundary feedback, and chaining.

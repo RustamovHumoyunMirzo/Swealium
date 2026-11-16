@@ -25,14 +25,16 @@ public sealed class AccessibilityHost
         if(Window.Focusable)windowState|=AccessibilityState.Focusable;if(Window.HasFocus)windowState|=AccessibilityState.Focused;
         if(!Window.IsVisible||Window.IsMinimized)windowState|=AccessibilityState.Offscreen;
         nodes.Add(new(0,null,AccessibilityRole.Window,Window.Title,"","","",viewport,viewport,windowState,AccessibilityActions.None,null,0,0,AccessibilityLiveRegion.Off));
-        if(Window.Content is {} content)Visit(content,0,default,viewport,available);
+        if(Window.Content is {} content)Visit(content,0,viewport,available);
         return new(Window.Id,++revision,Array.AsReadOnly(nodes.ToArray()));
-        void Visit(Widget widget,long parent,Point origin,Rect clip,bool enabled)
+        void Visit(Widget widget,long parent,Rect clip,bool enabled)
         {
             var a=widget.Accessibility;if(!widget.IsVisible||a.IsHidden)return;
             if(!Enum.IsDefined(a.Role)||!Enum.IsDefined(a.LiveRegion))throw new ArgumentOutOfRangeException(nameof(widget.Accessibility));
-            Rect bounds=new(origin.X+widget.Bounds.X,origin.Y+widget.Bounds.Y,widget.ActualWidth,widget.ActualHeight);
-            Rect visible=Intersection(bounds,clip);enabled&=widget.IsEnabled;
+            Rect bounds=widget.TransformedBounds;
+            Rect visible=Intersection(bounds,clip);
+            if(!System.Numerics.Matrix3x2.Invert(widget.WorldTransform,out _))visible=default;
+            enabled&=widget.IsInteractable;
             var state=enabled?AccessibilityState.Enabled:AccessibilityState.None;
             if(widget.IsFocusable)state|=AccessibilityState.Focusable;if(widget.IsFocused)state|=AccessibilityState.Focused;
             if(widget.TextEditor is {IsEnabled:true,IsReadOnly:true})state|=AccessibilityState.ReadOnly;
@@ -48,8 +50,8 @@ public sealed class AccessibilityHost
             if(widget is Container container)
             {
                 Rect childClip=widget.ClipToBounds?visible:clip;
-                if(container.ChildrenClip is {} local)childClip=Intersection(childClip,new(bounds.X+local.X,bounds.Y+local.Y,local.Width,local.Height));
-                foreach(var child in container.Children)Visit(child,widget.SemanticId,new(bounds.X,bounds.Y),childClip,enabled);
+                if(container.ChildrenClip is {} local)childClip=Intersection(childClip,widget.ToWindow(local));
+                foreach(var child in container.Children)Visit(child,widget.SemanticId,childClip,enabled);
             }
         }
     }
@@ -72,7 +74,7 @@ public sealed class AccessibilityHost
         static Widget? Find(Widget widget,Point parentPoint)
         {
             if(!widget.IsVisible||widget.Accessibility.IsHidden)return null;
-            Point local=new(parentPoint.X-widget.Bounds.X,parentPoint.Y-widget.Bounds.Y);bool inside=widget.ContainsPoint(local);
+            if(!widget.FromParent(parentPoint,out var local))return null;bool inside=widget.ContainsPoint(local);
             if(widget.ClipToBounds&&!inside)return null;
             if(widget is Container container&&container.CanHitChildren(local))
                 foreach(var child in container.PaintOrder.Reverse())if(Find(child,local) is {} found)return found;

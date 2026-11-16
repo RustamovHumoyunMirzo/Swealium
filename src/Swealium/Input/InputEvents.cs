@@ -37,6 +37,9 @@ public sealed class PointerEvent(PointerEventKind kind, Point position, PointerB
     public Point Position { get; internal set; } = position;
     public PointerButton Button { get; } = button;
     public Point WheelDelta { get; } = wheelDelta;
+    public Point RemainingWheelDelta {get;internal set;}=wheelDelta;
+    private HashSet<Widget>? scrollRecipients;
+    internal HashSet<Widget> ScrollRecipients=>scrollRecipients??=[];
     public KeyModifiers Modifiers { get; internal set; } = modifiers ?? KeyModifiers.None;
     internal bool HasExplicitModifiers { get; } = modifiers.HasValue;
     public PointerId PointerId {get;}=pointerId;
